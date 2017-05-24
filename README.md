@@ -1,5 +1,5 @@
 
-##Setup: an attempt was made to put all configuration items in nematus/config.py.##
+## Setup: an attempt was made to put all configuration items in nematus/config.py.
 
 
 
@@ -18,7 +18,7 @@ conda create --name theano_bleeding python=2
 
 source activate theano_bleeding
 
-###Pip Wheels to Install ###
+### Pip Wheels to Install
 
 which pip #-> /home/.../anaconda/envs/theano_bleeding/bin/pip
 
@@ -42,7 +42,7 @@ cat /usr/include/cudnn.h | grep "define CUDNN_MAJOR"  # 5  (as of 20161227)
 
 cat /usr/include/cudnn.h | grep "define CUDNN_MINOR"  # 1  (as of 20161227)
 
-#### Put python and cuda location in config.py ####
+#### Put python and cuda location in config.py
 
 TODO (as of 20161227): install CUDA 8.0
 
