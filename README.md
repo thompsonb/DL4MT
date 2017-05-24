@@ -35,12 +35,12 @@ An attempt was made to put all configuration items in nematus/config.py - put pa
 
 At the moment, configuring the training script requires changing values in nematus/train_dual.py - put paths to your data, initialized Nematus models, and trained language models here.
 
-The language model required here is a kenlm model with a small wrapper around it - use nematus/train_LMs.py to train these models.
-
+The language model required here is a kenlm model with a small wrapper around it.
+* use nematus/train_lm.py to train a kenlm model
+* use nematus/wrap_kenlm.py to wrap an existing kenlm binary model
 
 # Testing the build: #
 ./run_tests.py  (THIS WILL FAIL - data paths are all broken)
-
 
 # Running the code: #
 ./run_train_dual.py

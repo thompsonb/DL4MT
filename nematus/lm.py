@@ -82,7 +82,7 @@ class KenLM(AbstractLM):
 
     def wrap_existing_kenlm_model(self, kenlm_model):
         if not (kenlm_model.endswith('.binary') or '.binlm' in kenlm_model):
-            raise Exception('expected a .binary file')
+            raise Exception('expected file with .binlm* or .binary extension')
 
         self.tmpdir = tempfile.mkdtemp(dir=TEMP_DIR)
 
@@ -131,6 +131,9 @@ class KenLM(AbstractLM):
         save trained model to disk
         TODO (nice to have): write anything that seems useful (training parameters, date trained, etc) to params.pkl
         """
+        if not model_file_name.endswith('.zip'):
+            raise Exception('expected output file to have .zip extension')
+
         self._assert_initilized()
         params = dict(model_type='kenlm')
         pkl_fname = os.path.join(self.tmpdir, 'params.pkl')
