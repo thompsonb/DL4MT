@@ -207,8 +207,8 @@ def train(**kwargs):
                        })
 
         with setup_remotes(
-                remote_metadata_list=[dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_a_b'], gpu_id=4),
-                                      dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_b_a'], gpu_id=5),
+                remote_metadata_list=[dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_a_b'], gpu_id=1),
+                                      dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_b_a'], gpu_id=2),
                                       dict(script=lm_remote_script, name=kwargs['pyro_name_lm_a'], gpu_id=-1),
                                       dict(script=lm_remote_script, name=kwargs['pyro_name_lm_b'], gpu_id=-1)],
                 pyro_port=kwargs['pyro_port'],
