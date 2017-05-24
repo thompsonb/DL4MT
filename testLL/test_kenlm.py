@@ -4,7 +4,8 @@ from os import remove
 from os.path import exists
 import logging
 
-test_location = '/home/.../kenlm_model/kenlm_test_model.zip'
+test_lm_location = 'testLL/test_data/out.lm.gz'
+test_txt_location = 'testLL/test_data/par_samp_test'
 
 
 class KenLMTestCase(unittest.TestCase):
@@ -39,13 +40,14 @@ class KenLMTestCase(unittest.TestCase):
         self.logger.info("Attempt to load a KenLM model")
         self.logger.info("========================================================================================")
         self.klm = KenLM()
-        self.klm.load(test_location)
+        self.klm.load(test_lm_location)
 
     def test_train(self):
         self.logger.info("========================================================================================")
         self.logger.info("Attempt to train a KenLM model")
         self.logger.info("========================================================================================")
-        path = '/to/do/some/text/file'
+        path = test_txt_location
+        print path
         self.klm.train(path)
         self.klm.save(self.zip_path)
 
@@ -53,14 +55,17 @@ class KenLMTestCase(unittest.TestCase):
         self.logger.info("========================================================================================")
         self.logger.info("Attempt to save a loaded KenLM model")
         self.logger.info("========================================================================================")
-        self.klm.load(test_location)
+        self.klm.load(test_lm_location)
         self.klm.save(self.zip_path)
 
     def test_score(self):
+        """
+        Not expected to pass : the sample LM has changed
+        """
         self.logger.info("========================================================================================")
         self.logger.info("Attempt to score a sentence and see if it matches the expected result.")
         self.logger.info("========================================================================================")
-        self.klm.load(test_location)
+        self.klm.load(test_lm_location)
         sentence = 'language modeling is fun .'
         expected_score = [-6.203308582305908, -3.873892307281494, -6.203308582305908, -6.203308582305908,
                           -6.203308582305908, -3.873892307281494, -6.203308582305908, -6.203308582305908,
