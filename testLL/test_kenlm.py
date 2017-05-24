@@ -4,7 +4,7 @@ from os import remove
 from os.path import exists
 import logging
 
-test_lm_location = 'testLL/test_data/out.lm.gz'
+test_lm_location = 'testLL/test_data/out.lm.zip'
 test_txt_location = 'testLL/test_data/par_samp_test'
 
 
