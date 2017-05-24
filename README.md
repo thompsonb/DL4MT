@@ -26,6 +26,13 @@ Theano should be compiled for a GPU. Tested with CUDA v ?? and cuDNN 5.1, but pr
 3. Install the kenlm python wrapper : `pip install --user https://github.com/kpu/kenlm/archive/master.zip`
 4. Install other stuff : `pip install --user contextlib2 Pyro4`
 
+# Test Data: #
+Various tests/examples depend on Rico's wmt16 trained systems. Create a directory for the data, then cd into it and run the one of the following commands:
+1. Command for just en-de (required):
+* `wget -r --cut-dirs=2 -e robots=off -nH -np -R index.html* http://data.statmt.org/rsennrich/wmt16_systems/en-de/`
+2. If you wanted all of the language pairs (optional, for now):
+* `wget -r --cut-dirs=1 -e robots=off -nH -np -R index.html* http://data.statmt.org/rsennrich/wmt16_systems/`
+
 
 # Setup: #
 
