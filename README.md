@@ -24,18 +24,12 @@ which pip #-> /home/.../anaconda/envs/theano_bleeding/bin/pip
 
 pip install --upgrade git+git://github.com/Theano/Theano.git # See http://deeplearning.net/software/theano/install.html # note: had to run without --no-deps to get Numpy, etc. 
 
-pip install Pyro4
-
-pip install ipdb
-
-pip install requests
-
-pip install pyunpack
-
-conda install -c anaconda contextlib2=0.5.4
-
-todo: use a fixed, local version of kenlm, but for now:
-pip install https://github.com/kpu/kenlm/archive/master.zip
+* pip install Pyro4
+* pip install ipdb
+* pip install requests
+* pip install pyunpack
+* conda install -c anaconda contextlib2=0.5.4
+* todo: use a fixed, local version of kenlm, but for now: pip install https://github.com/kpu/kenlm/archive/master.zip
 
 
 cat /usr/include/cudnn.h | grep "define CUDNN_MAJOR"  # 5  (as of 20161227)
