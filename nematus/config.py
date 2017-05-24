@@ -14,5 +14,3 @@ TEMP_DIR = None  # None==use system default
 
 # if you wanted all of the language pairs...
 # wget -r --cut-dirs=1 -e robots=off -nH -np -R index.html* http://data.statmt.org/rsennrich/wmt16_systems/
-
-wmt16_systems_dir = '/todo/path/wmt16_Rico_systems/'
