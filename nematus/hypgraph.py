@@ -4,8 +4,8 @@
 from collections import defaultdict
 
 class HypGraph(object):
-	
-	def __init__(self):
+        
+        def __init__(self):
 		self.nodes = defaultdict(str) # {id = label}
 		self.edges = [] # (parent_node_id, child_node_id)
 		self.costs = defaultdict(float) # {node_id = cost}
@@ -58,11 +58,11 @@ class HypGraphRenderer(object):
 		return label
 
 	def _render(self, costs=False, word_probs=False, highlight_best=False):	
-		from pygraphviz import AGraph
+                from pygraphviz import AGraph
                 graph = AGraph(directed=True)
                 for node_id, node_label in self.nodes.iteritems():
                         attributes = self._node_attr(node_id, costs=costs, word_probs=word_probs)
-			graph.add_node(node_id, **attributes)
+                        graph.add_node(node_id, **attributes)
                 for (parent_node_id, child_node_id) in self.edges:
                         graph.add_edge(parent_node_id, child_node_id)
 		self.graph = graph

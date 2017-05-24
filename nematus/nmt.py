@@ -108,10 +108,10 @@ def train(dim_word=100,  # word vector dimensionality
         n_words = len(worddicts[1])
         model_options['n_words'] = n_words
 
-    print 'Loading data'
+    print('Loading data')
     domain_interpolation_cur = None
     if use_domain_interpolation:
-        print 'Using domain interpolation with initial ratio %s, increase rate %s' % (domain_interpolation_min, domain_interpolation_inc)
+        print('Using domain interpolation with initial ratio %s, increase rate %s' % (domain_interpolation_min, domain_interpolation_inc))
         domain_interpolation_cur = domain_interpolation_min
         train = DomainInterpolatorTextIterator(datasets[0], datasets[1],
                          dictionaries[:-1], dictionaries[1],
@@ -146,11 +146,11 @@ def train(dim_word=100,  # word vector dimensionality
 
     comp_start = time.time()
 
-    print 'Building model'
+    print('Building model')
     params = init_params(model_options)
     # reload parameters
     if reload_ and os.path.exists(saveto):
-        print 'Reloading model parameters'
+        print('Reloading model parameters')
         params = load_params(saveto, params)
 
     tparams = init_theano_params(params)
@@ -164,13 +164,13 @@ def train(dim_word=100,  # word vector dimensionality
     inps = [x, x_mask, y, y_mask]
 
     if validFreq or sampleFreq:
-        print 'Building sampler'
+        print('Building sampler')
         f_init, f_next = build_sampler(tparams, model_options, use_noise, trng)
 
     # before any regularizer
-    print 'Building f_log_probs...',
+    print('Building f_log_probs...',)
     f_log_probs = theano.function(inps, cost, profile=profile)
-    print 'Done'
+    print('Done')
 
     cost = cost.mean()
 
@@ -213,9 +213,9 @@ def train(dim_word=100,  # word vector dimensionality
     else:
         updated_params = tparams
 
-    print 'Computing gradient...',
+    print('Computing gradient...',)
     grads = tensor.grad(cost, wrt=itemlist(updated_params))
-    print 'Done'
+    print('Done')
 
     # apply gradient clipping here
     if clip_c > 0.:
@@ -232,13 +232,13 @@ def train(dim_word=100,  # word vector dimensionality
     # compile the optimizer, the actual computational graph is compiled here
     lr = tensor.scalar(name='lr')
 
-    print 'Building optimizers...',
+    print('Building optimizers...',)
     f_grad_shared, f_update = eval(optimizer)(lr, updated_params, grads, inps, cost, profile=profile)
-    print 'Done'
+    print('Done')
 
-    print 'Total compilation time: {0:.1f}s'.format(time.time() - comp_start)
+    print('Total compilation time: {0:.1f}s'.format(time.time() - comp_start))
 
-    print 'Optimization'
+    print('Optimization')
 
     best_p = None
     bad_counter = 0
@@ -284,7 +284,7 @@ def train(dim_word=100,  # word vector dimensionality
             x, x_mask, y, y_mask = prepare_data(x, y, maxlen=maxlen)  # n_words_src=n_words_src, n_words=n_words) # TODO: why unused??
 
             if x is None:
-                print 'Minibatch with zero sample under length ', maxlen
+                print('Minibatch with zero sample under length ', maxlen)
                 uidx -= 1
                 continue
 
@@ -297,36 +297,36 @@ def train(dim_word=100,  # word vector dimensionality
             # check for bad numbers, usually we remove non-finite elements
             # and continue training - but not done here
             if numpy.isnan(cost) or numpy.isinf(cost):
-                print 'NaN detected'
+                print('NaN detected')
                 return 1., 1., 1.
 
             # verbose
             if numpy.mod(uidx, dispFreq) == 0:
                 ud = time.time() - ud_start
                 wps = (last_disp_samples) / float(ud)
-                print 'Epoch ', eidx, 'Update ', uidx, 'Cost ', cost, 'UD ', ud, "{0:.2f} sentences/s".format(wps)
+                print('Epoch ', eidx, 'Update ', uidx, 'Cost ', cost, 'UD ', ud, "{0:.2f} sentences/s".format(wps))
                 ud_start = time.time()
                 last_disp_samples = 0
 
             # save the best model so far, in addition, save the latest model
             # into a separate file with the iteration number for external eval
             if numpy.mod(uidx, saveFreq) == 0:
-                print 'Saving the best model...',
+                print('Saving the best model...',)
                 if best_p is not None:
                     params = best_p
                 else:
                     params = unzip_from_theano(tparams)
                 numpy.savez(saveto, history_errs=history_errs, uidx=uidx, **params)
-                print 'Done'
+                print('Done')
 
                 # save with uidx
                 if not overwrite:
-                    print 'Saving the model at iteration {}...'.format(uidx),
+                    print('Saving the model at iteration {}...'.format(uidx),)
                     saveto_uidx = '{}.iter{}.npz'.format(
                         os.path.splitext(saveto)[0], uidx)
                     numpy.savez(saveto_uidx, history_errs=history_errs,
                                 uidx=uidx, **unzip_from_theano(tparams))
-                    print 'Done'
+                    print('Done')
 
             # generate some samples with the model and display them
             if sampleFreq and numpy.mod(uidx, sampleFreq) == 0:
@@ -346,7 +346,7 @@ def train(dim_word=100,  # word vector dimensionality
                                                                                         argmax=False,
                                                                                         suppress_unk=False,
                                                                                         return_hyp_graph=False)
-                    print 'Source ', jj, ': ',
+                    print('Source ', jj, ': ',)
                     for pos in range(x.shape[1]):
                         if x[0, pos, jj] == 0:
                             break
@@ -360,17 +360,17 @@ def train(dim_word=100,  # word vector dimensionality
                                 sys.stdout.write('|')
                             else:
                                 sys.stdout.write(' ')
-                    print
-                    print 'Truth ', jj, ' : ',
+                    print()
+                    print('Truth ', jj, ' : ',)
                     for vv in y[:, jj]:
                         if vv == 0:
                             break
                         if vv in worddicts_r[-1]:
-                            print worddicts_r[-1][vv],
+                            print(worddicts_r[-1][vv],)
                         else:
-                            print 'UNK',
-                    print
-                    print 'Sample ', jj, ': ',
+                            print('UNK',)
+                    print()
+                    print('Sample ', jj, ': ',)
                     if stochastic:
                         ss = sample
                     else:
@@ -380,10 +380,10 @@ def train(dim_word=100,  # word vector dimensionality
                         if vv == 0:
                             break
                         if vv in worddicts_r[-1]:
-                            print worddicts_r[-1][vv],
+                            print(worddicts_r[-1][vv],)
                         else:
-                            print 'UNK',
-                    print
+                            print('UNK',)
+                    print()
 
             # validate model on validation set and early stop if necessary
             if valid and validFreq and numpy.mod(uidx, validFreq) == 0:
@@ -402,43 +402,43 @@ def train(dim_word=100,  # word vector dimensionality
                     if bad_counter > patience:
                         if use_domain_interpolation and (domain_interpolation_cur < 1.0):
                             domain_interpolation_cur = min(domain_interpolation_cur + domain_interpolation_inc, 1.0)
-                            print 'No progress on the validation set, increasing domain interpolation rate to %s and resuming from best params' % domain_interpolation_cur
+                            print('No progress on the validation set, increasing domain interpolation rate to %s and resuming from best params' % domain_interpolation_cur)
                             train.adjust_domain_interpolation_rate(domain_interpolation_cur)
                             if best_p is not None:
                                 zip_to_theano(best_p, tparams)
                             bad_counter = 0
                         else:
-                            print 'Early Stop!'
+                            print('Early Stop!')
                             estop = True
                             break
 
                 if numpy.isnan(valid_err):
                     ipdb.set_trace()
 
-                print 'Valid ', valid_err
+                print('Valid ', valid_err)
 
                 if external_validation_script:
-                    print "Calling external validation script"
+                    print("Calling external validation script")
                     if p_validation is not None and p_validation.poll() is None:
-                        print "Waiting for previous validation run to finish"
-                        print "If this takes too long, consider increasing validation interval, reducing validation set size, or speeding up validation by using multiple processes"
+                        print("Waiting for previous validation run to finish")
+                        print("If this takes too long, consider increasing validation interval, reducing validation set size, or speeding up validation by using multiple processes")
                         valid_wait_start = time.time()
                         p_validation.wait()
-                        print "Waited for {0:.1f} seconds".format(time.time()-valid_wait_start)
-                    print 'Saving  model...',
+                        print("Waited for {0:.1f} seconds".format(time.time()-valid_wait_start))
+                    print('Saving  model...',)
                     params = unzip_from_theano(tparams)
                     numpy.savez(saveto +'.dev', history_errs=history_errs, uidx=uidx, **params)
                     json.dump(model_options, open('%s.dev.npz.json' % saveto, 'wb'), indent=2)
-                    print 'Done'
+                    print('Done')
                     p_validation = Popen([external_validation_script])
 
             # finish after this many updates
             if uidx >= finish_after:
-                print 'Finishing after %d iterations!' % uidx
+                print('Finishing after %d iterations!' % uidx)
                 estop = True
                 break
 
-        print 'Seen %d samples' % n_samples
+        print('Seen %d samples' % n_samples)
 
         if estop:
             break
@@ -452,7 +452,7 @@ def train(dim_word=100,  # word vector dimensionality
                                            model_options, valid)
         valid_err = valid_errs.mean()
 
-        print 'Valid ', valid_err
+        print('Valid ', valid_err)
 
     if best_p is not None:
         params = copy.copy(best_p)

@@ -178,7 +178,7 @@ class MonoIterator:
             self.source_orig = source
             self.source = shuffle.main([self.source_orig], temporary=True)
             self.source = self.source[0] # ???
-            print 'this had better be a file:', type(self.source)
+            print('this had better be a file:', type(self.source))
         else:
             self.source = fopen(source, 'r')
         self.source_dicts = []

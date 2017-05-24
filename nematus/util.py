@@ -5,6 +5,7 @@ Utility functions
 import sys
 import json
 import cPickle as pkl
+#import _pickle as pkl # uncomment this line if python3
 
 from copy import deepcopy
 
@@ -55,7 +56,7 @@ def seqs2words(seq, inverse_target_dictionary, warn=True):
             words.append(inverse_target_dictionary[w])
         else:
             if warn:
-                print 'WARNING: unknown (sub)word "%s"' % w
+                print('WARNING: unknown (sub)word "%s"' % w)
             words.append('UNK')
     return ' '.join(words)
 
