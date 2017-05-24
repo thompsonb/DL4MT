@@ -1,0 +1,3 @@
+from test_kenlm import KenLMTestCase
+from test_nematus import PyroNematusTests
+from test_par_samp import ParallelSampleTestCase
