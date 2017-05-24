@@ -11,7 +11,9 @@ from config import wmt16_systems_dir
 if __name__ == '__main__':
     LANG_A = 'en'
     LANG_B = 'de'
-    DATA_DIR = '/todo'
+    DATA_DIR = sys.argv[1]
+    LM_A = sys.argv[2]
+    LM_B = sys.argv[3]
     modeldir_AB = os.path.join(wmt16_systems_dir, '%s-%s'%(LANG_A, LANG_B))
     modeldir_BA = os.path.join(wmt16_systems_dir, '%s-%s'%(LANG_A, LANG_B))
 
@@ -23,8 +25,8 @@ if __name__ == '__main__':
                      lrate=0.0001,
                      maxlen=50,
                      # TODO: monolingual data
-                     parallel_datasets=(DATA_DIR+'hash_7002632531132308598_short', DATA_DIR+'hash_2827693600570086783_short'),
-                     monolingual_datasets=(DATA_DIR+'hash_7002632531132308598_short', DATA_DIR+'hash_2827693600570086783_short'), # HACK - passing in parallel
+                     parallel_datasets=(DATA_DIR+'/corpus.'+LANG_A, DATA_DIR+'/corpus.'+LANG_B),
+                     monolingual_datasets=(DATA_DIR+'/corpus.'+LANG_A, DATA_DIR+'/corpus.'+LANG_B), # HACK - passing in parallel
                      valid_datasets=('data/newsdev2016.bpe.ro', 'data/newsdev2016.bpe.en'),  # TODO!
                      dictionaries_a_b=[modeldir_AB + '/vocab.%s.json' % LANG_A, modeldir_AB + '/vocab.%s.json' % LANG_B],
                      dictionaries_b_a=[modeldir_BA + '/vocab.%s.json' % LANG_B, modeldir_BA + '/vocab.%s.json' % LANG_A],
@@ -33,6 +35,6 @@ if __name__ == '__main__':
                      save_freq=30000,
                      sample_freq=10000,
                      #external_validation_script='./validate.sh',
-                     language_models=('/path/lm0.zip', '/path/lm1.zip'),
+                     language_models=(LM_A, LM_B),
                      )
     print validerr
