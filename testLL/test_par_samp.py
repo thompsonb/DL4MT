@@ -27,15 +27,15 @@ def build_model_options(model_dir, lang0, lang1):
     model_options = deepcopy(default_model_options)
     model_options.update(json.loads(open(os.path.join(model_dir, 'model.npz.json')).read()))
     model_options['saveto'] = os.path.join(model_dir, 'model.npz')
-    model_options['dictionaries'] = [model_dir + 'vocab.%s.json' % lang0,
-                                     model_dir + 'vocab.%s.json' % lang1]
+    model_options['dictionaries'] = [os.path.join(model_dir, 'vocab.%s.json' % lang0),
+                                     os.path.join(model_dir, 'vocab.%s.json' % lang1)]
     # TODO: other paths... datasets, valid_datasets?
     return model_options
 
 
 LANG_A = 'en'
 LANG_B = 'de'
-modeldir_AB = os.path.join(wmt16_systems_dir, '%s-%s')
+modeldir_AB = os.path.join(wmt16_systems_dir, '%s-%s'%(LANG_A, LANG_B))
 
 dictionaries = [modeldir_AB + '/vocab.%s.json' % LANG_A, modeldir_AB + '/vocab.%s.json' % LANG_B],
 model_options = build_model_options(modeldir_AB, LANG_A, LANG_B)
