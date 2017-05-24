@@ -4,6 +4,7 @@ import os
 import unittest
 import sys
 import numpy as np
+import time
 import logging
 import Pyro4
 import codecs
@@ -99,18 +100,24 @@ def sample_par(lines, model_options, f_init, f_next, beam_size=3, suppress_unk=T
         seqs_y_dummy = [[x[0] for x in element] for element in seqs]
         sequences, xmask, dummy_y, ymask = prepare_data(seqs, seqs_y_dummy)
 
-        print 'Calling translate_par'
+        print 'Calling gen_par_samp'
+        t0 = time.time()
         parsample, parscore, parword_probs = gen_par_sample([f_init, ], [f_next, ],
-                                                   sequences, xmask,                                             
-                                                   k=beam_size, maxlen=200,
-                                                   suppress_unk=suppress_unk)
+                                                            sequences, xmask,
+                                                            k=beam_size, maxlen=200,
+                                                            suppress_unk=suppress_unk)
+        print 'gen_par_samp returned, took %.1f seconds'%(time.time()-t0)
 
+        t0 = time.time()
         compare_samples = []
         for i in range(len(seqs)):
             mask_size = int(round(np.sum(xmask[:,i])))
             seq = sequences[:, :mask_size, i:i+1]
+            print 'calling gen_sample'
             sample, score, word_probs, _, _ = gen_sample([f_init, ], [f_next, ], seq, k=beam_size, maxlen=200, stochastic = False, suppress_unk=suppress_unk)
             compare_samples += sample
+
+        print 'iterative gen_sample took %.1f seconds'%(time.time()-t0)
 
         sample_words = []
         for sents in parsample:
@@ -162,11 +169,11 @@ class ParallelSampleTestCase(unittest.TestCase):
         with codecs.open(os.path.join(current_script_dir, 'test_data/par_samp_test')) as fh:
             lines = [line for line in fh]
         parsamples, nonparsamples = sample_par(lines=lines,
-                                                             model_options=model_options, 
-                                                             f_init = self.remote_interface.x_f_init,
-                                                             f_next = self.remote_interface.x_f_next,
-                                                             beam_size=3, 
-                                                             suppress_unk=True)
+                                               model_options=model_options, 
+                                               f_init = self.remote_interface.x_f_init,
+                                               f_next = self.remote_interface.x_f_next,
+                                               beam_size=3, 
+                                               suppress_unk=True)
         self.assertEqual(parsamples, nonparsamples)
         #for line, sents, scores_per_sent in zip(lines, sample_words, score):
         #    print '------------------', line
