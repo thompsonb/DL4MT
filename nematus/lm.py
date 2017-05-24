@@ -81,7 +81,7 @@ class KenLM(AbstractLM):
     """
 
     def wrap_existing_kenlm_model(self, kenlm_model):
-        if not (kenlm_model.endswith('.binary') or kenlm_model.endswith('.binlm')):
+        if not (kenlm_model.endswith('.binary') or '.binlm' in kenlm_model):
             raise Exception('expected a .binary file')
 
         self.tmpdir = tempfile.mkdtemp(dir=TEMP_DIR)
