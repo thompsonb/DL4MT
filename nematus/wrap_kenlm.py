@@ -5,9 +5,9 @@ import os
 from lm import KenLM
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    data = parser.add_argument('kenlm_binary_model')
-    data = parser.add_argument('output_file')
+    parser = argparse.ArgumentParser('simple script to wrap a kenlm file as expected by rest of code')
+    data = parser.add_argument('kenlm_binary_model', help='existing .binlm kenlm file')
+    data = parser.add_argument('output_file', help='output file to write, should end in .zip')
     args = parser.parse_args()
 
     kenlm = KenLM()
