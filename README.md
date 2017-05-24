@@ -1,5 +1,5 @@
 
-Setup: an attempt was made to put all configuration items in nematus/config.py.
+##Setup: an attempt was made to put all configuration items in nematus/config.py.##
 
 
 
@@ -18,6 +18,8 @@ conda create --name theano_bleeding python=2
 
 source activate theano_bleeding
 
+###Pip Wheels to Install ###
+
 which pip #-> /home/.../anaconda/envs/theano_bleeding/bin/pip
 
 pip install --upgrade git+git://github.com/Theano/Theano.git # See http://deeplearning.net/software/theano/install.html # note: had to run without --no-deps to get Numpy, etc. 
@@ -32,7 +34,7 @@ pip install pyunpack
 
 conda install -c anaconda contextlib2=0.5.4
 
-todo: use a fixed, local version of kenlm
+todo: use a fixed, local version of kenlm, but for now:
 pip install https://github.com/kpu/kenlm/archive/master.zip
 
 
@@ -40,7 +42,7 @@ cat /usr/include/cudnn.h | grep "define CUDNN_MAJOR"  # 5  (as of 20161227)
 
 cat /usr/include/cudnn.h | grep "define CUDNN_MINOR"  # 1  (as of 20161227)
 
-Put python and cuda location in config.py
+#### Put python and cuda location in config.py ####
 
 TODO (as of 20161227): install CUDA 8.0
 
