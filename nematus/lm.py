@@ -80,6 +80,19 @@ class KenLM(AbstractLM):
     model_type is "kenlm"
     """
 
+    def wrap_existing_kenlm_model(self, kenlm_model):
+        if not kenlm_model.endswith('.binary'):
+            raise Exception('expected a .binary file')
+
+        self.tmpdir = tempfile.mkdtemp(dir=TEMP_DIR)
+
+        model_binary_path = os.path.join(self.tmpdir, 'kenlm_model.binary')
+
+        subprocess.check_call('cp %s %s'%(kenlm_model, model_binary_path), shell=True)
+
+        self.kenlm_model = kenlm.Model(model_binary_path)
+
+
     def train(self, path_to_text):
         # also stores binary in temp directory
         self.tmpdir = tempfile.mkdtemp(dir=TEMP_DIR)
@@ -110,6 +123,8 @@ class KenLM(AbstractLM):
         #subprocess.check_call('rm %s' % model_arpa_path)
 
         self.kenlm_model = kenlm.Model(model_binary_path)
+
+
 
     def save(self, model_file_name):
         """
