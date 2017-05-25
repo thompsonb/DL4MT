@@ -36,7 +36,8 @@ def _add_dim(x_pre):
 
 def _train_foo(remote_mt, _xxx, _yyy, _per_sent_weight, _lrate, maxlen):
     _x_prep, _x_mask, _y_prep, _y_mask = prepare_data(_add_dim(_xxx), _yyy, maxlen=maxlen)
-    assert (_x_prep is not None)
+    if _x_prep is None:
+        return None
     remote_mt.set_noise_val(0.)
     # returns cost, which is related to log probs BUT may be weighted per sentence, and may include regularization terms!
     cost = remote_mt.x_f_grad_shared(_x_prep, _x_mask, _y_prep, _y_mask, _per_sent_weight, per_sent_cost=True)
@@ -54,21 +55,27 @@ def _train_foo(remote_mt, _xxx, _yyy, _per_sent_weight, _lrate, maxlen):
     return per_sent_mt_reward
 
 
-def monolingual_train(mt_endpoints, lm_endpoints, 
+def monolingual_train(mt_systems, lm_1, 
                       data, trng, k, maxlen, 
                       worddicts_r, worddicts, 
                       alpha, learning_rate_big,
                       learning_rate_small):
 
+    mt_01, mt_10 = mt_systems
     num2word_01, num2word_10 = worddicts_r
     word2num_01, word2num_10 = worddicts
 
     for sent in data:
-        mt = mt_endpoints[0]
+        print '#'*20, 'NEW SENTENCE'
+
+        try:
+            print 'sent 0:', ' '.join([num2word_01[0][foo[0]] for foo in sent])
+        except:
+            print 'could not print sent 0'
 
         # TRANSLATE 0->1
-        sents1_01, scores_1, _, _, _ = gen_sample([mt.x_f_init],
-                                                  [mt.x_f_next],
+        sents1_01, scores_1, _, _, _ = gen_sample([mt_01.x_f_init],
+                                                  [mt_01.x_f_next],
                                                   numpy.array([sent, ]),
                                                   trng=trng, k=k,
                                                   maxlen=maxlen,
@@ -79,9 +86,9 @@ def monolingual_train(mt_endpoints, lm_endpoints,
 
         try:
             for ii, sent1_01 in enumerate(sents1_01):
-                print 'sent1_01 %d:'%ii, ' '.join([num2word_01[1][foo] for foo in sent1_01])
+                print 'sent 0->1 #%d (in system A vocab):'%ii, ' '.join([num2word_01[1][foo] for foo in sent1_01])
         except:
-            print 'failed to print sent1_01d sentences'
+            print 'failed to print sent 0->1 sentences (in system A vocab)'
 
         # strip out <eos>, </s> tags (I have no idea where </s> is coming from!)
         sents1_01_tmp = []
@@ -92,21 +99,21 @@ def monolingual_train(mt_endpoints, lm_endpoints,
         # Clean Data (for length - translated sentence may not be acceptable length)
         sents1_01_clean = []
         sents0_01_clean = []
-        for sent_1 in sents1_01:
+        for ii, sent_1 in enumerate(sents1_01):
             if len(sent_1) < 2:
-                pass
+                print 'len(sent #%d)=%d, < 2. skipping'%(ii, len(sent_1))
             elif len(sent_1) >= maxlen:
-                pass
+                print 'len(sent #%d)=%d, > %d. skipping'%(ii, len(sent_1), maxlen)
             else:
                 sents1_01_clean.append(sent_1)
                 sents0_01_clean.append([x[0] for x in sent])
 
         if len(sents1_01_clean) == 0:
-            print "No Acceptable Data"
+            print "No acceptable length data out of 0->1 system"
             continue
 
         # LANGUAGE MODEL SCORE IN LANG 1        
-        r_1 = lm_endpoints[0].score(numpy.array(sents1_01_clean).T)
+        r_1 = lm_1.score(numpy.array(sents1_01_clean).T)
         print "scores_lm1", r_1
 
         # The two MT systems have different vocabularies
@@ -115,9 +122,16 @@ def monolingual_train(mt_endpoints, lm_endpoints,
         for num1 in sents1_01_clean:
             words = [num2word_01[1][num] for num in num1]
             words = [w for w in words if w not in ('<eos>', '</s>')]
-            print words
             num2 = [word2num_10[0][word] for word in words]
             sents1_10_clean.append(num2)
+
+
+        try:
+            for ii, sent1_01 in enumerate(sents1_10_clean):
+                print 'sent 0->1 (in system B vocab) #%d:'%ii, ' '.join([num2word_10[0][foo] for foo in sent1_01])
+        except:
+            print 'failed to print sent 0->1 sentences (in system B vocab)'
+
 
         sents0_10_clean = []
         for num1 in sents0_01_clean:
@@ -126,9 +140,17 @@ def monolingual_train(mt_endpoints, lm_endpoints,
             num2 = [word2num_10[1][word] for word in words]
             sents0_10_clean.append(num2)
 
+
+        try:
+            for ii, sent0_10 in enumerate(sents0_10_clean):
+                print 'sent 0 (in system B vocab) #%d:'%ii, ' '.join([num2word_10[1][foo] for foo in sent0_10])
+        except:
+            print 'failed to print sent 0 sentences (in system B vocab)'
+
+
         # MT 0->1 SCORE AND UPDATE
-        sents0_10, _, _, _, _ = gen_sample([mt_endpoints[1 % len(mt_endpoints)].x_f_init],
-                                           [mt_endpoints[1 % len(mt_endpoints)].x_f_next],
+        sents0_10, _, _, _, _ = gen_sample([mt_10.x_f_init],
+                                           [mt_10.x_f_next],
                                            numpy.array([[[x, ] for x in sents1_10_clean[0]], ]),
                                            trng=trng, k=1,
                                            maxlen=maxlen,
@@ -136,23 +158,32 @@ def monolingual_train(mt_endpoints, lm_endpoints,
                                            argmax=False,
                                            suppress_unk=True,
                                            return_hyp_graph=False)
-        
-        print 'sample from 1->0 (just for debug)', ' '.join([num2word_10[1][x] for x in sents0_10[0]])
+
+        try:
+            print '[just for debug] first sentence from 0->1->0 (in system B vocab)', ' '.join([num2word_10[1][x] for x in sents0_10[0]])
+        except:
+            print 'failed to print 0->1->0 sentences'
 
         per_sent_weight = [(1 - alpha) / k for _ in sents1_01_clean]
 
         print 'psw10=', per_sent_weight
 
-        r_2 = _train_foo(mt_endpoints[1 % len(mt_endpoints)], sents1_10_clean, sents0_10_clean,
+        r_2 = _train_foo(mt_10, sents1_10_clean, sents0_10_clean,
                          per_sent_weight, learning_rate_big, maxlen)
+
+        if r_2 is None:  # failed due to assert
+            print 'WARNING: data prep failed (_x_prep is None). ignoring...'
+            continue
+            
 
         print 'reward_mt10', r_2
 
-        per_sent_weight = [-1 * (alpha * s1 + (1 - alpha) * s2) / k for s1, s2 in
-                           zip(r_1, r_2)]
+        per_sent_weight = [-1 * (alpha * s1 + (1 - alpha) * s2) / k for s1, s2 in zip(r_1, r_2)]
         print 'psw01=', per_sent_weight
-        final_r = _train_foo(mt, sents0_10_clean, sents1_10_clean, per_sent_weight,
+
+        final_r = _train_foo(mt_01, sents0_10_clean, sents1_10_clean, per_sent_weight,
                              learning_rate_small, maxlen)
+
         print final_r
 
     return 1
@@ -503,16 +534,6 @@ def train2(model_options_a_b=None,
                         # uidx -= 1
                         continue
 
-                    # print 'x_prep shape', x_prep.shape  # (1, 49, 9)
-                    # print 'y_prep shape', y_prep.shape  # (50, 9)
-
-                    # compute cost, grads and copy grads to shared variables
-                    # print model_options
-                    # print len(x)  # 16
-                    # print len(x[0][0])  # 1
-                    # print len(y)  # 16
-                    # print maxlen  # 50
-
                     cost = _remote_mt.x_f_grad_shared(x_prep, x_mask, y_prep, y_mask)
 
                     # check for bad numbers, usually we remove non-finite elements
@@ -523,22 +544,24 @@ def train2(model_options_a_b=None,
 
                     # do the update on parameters
                     _remote_mt.x_f_update(lrate)
+
             elif data_type == 'mono-a':
-                print 'training the a -> b -> a loop.'
-                print 'data:', data
-                ret = monolingual_train([remote_mt_a_b, remote_mt_b_a], [remote_lm_b], data, trng, k, maxlen,
+                print '#'*40, 'training the a -> b -> a loop.'
+                ret = monolingual_train([remote_mt_a_b, remote_mt_b_a], 
+                                        remote_lm_b, data, trng, k, maxlen,
                                         [worddicts_r_a_b, worddicts_r_b_a], 
                                         [worddicts_a_b,   worddicts_b_a], 
                                         alpha, learning_rate_big,
                                         learning_rate_small)
             elif data_type == 'mono-b':
-                print 'training the b -> a -> b loop.'
-                print 'data:', data
-                ret = monolingual_train([remote_mt_b_a, remote_mt_a_b], [remote_lm_a], data, trng, k, maxlen,
+                print '#'*40, 'training the b -> a -> b loop.'
+                ret = monolingual_train([remote_mt_b_a, remote_mt_a_b], 
+                                        remote_lm_a, data, trng, k, maxlen,
                                         [worddicts_r_b_a, worddicts_r_a_b], 
                                         [worddicts_b_a,   worddicts_a_b], 
                                         alpha, learning_rate_big,
                                         learning_rate_small)
             else:
                 raise Exception('This should be unreachable. How did you get here.')
+
     return valid_err
