@@ -239,10 +239,10 @@ def train(**kwargs):
                        })
 
         with setup_remotes(
-                remote_metadata_list=[dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_a_b'], gpu_id=0),
-                                      dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_b_a'], gpu_id=0),
-                                      dict(script=lm_remote_script, name=kwargs['pyro_name_lm_a'], gpu_id=-1),
-                                      dict(script=lm_remote_script, name=kwargs['pyro_name_lm_b'], gpu_id=-1)],
+                remote_metadata_list=[dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_a_b'], gpu_id=kwargs['mt_gpu_ids'][0]),
+                                      dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_b_a'], gpu_id=kwargs['mt_gpu_ids'][1]),
+                                      dict(script=lm_remote_script, name=kwargs['pyro_name_lm_a'], gpu_id=kwargs['lm_gpu_ids'][0]),
+                                      dict(script=lm_remote_script, name=kwargs['pyro_name_lm_b'], gpu_id=kwargs['lm_gpu_ids'][1])],
                 pyro_port=kwargs['pyro_port'],
                 pyro_key=kwargs['pyro_key']):
             train2(**kwargs)
@@ -282,7 +282,10 @@ def train2(model_options_a_b=None,
            pyro_name_mt_b_a=None,
            pyro_name_lm_a=None,
            pyro_name_lm_b=None,
-           language_models=()):
+           language_models=(),
+           mt_gpu_ids=(),
+           lm_gpu_ids=(),
+           ):
 
     if model_options_a_b is None:
         model_options_a_b = default_model_options
@@ -318,7 +321,6 @@ def train2(model_options_a_b=None,
     worddicts_a_b, worddicts_r_a_b = create_worddicts_and_update_model_options(dictionaries_a_b, model_options_a_b)
     worddicts_b_a, worddicts_r_b_a = create_worddicts_and_update_model_options(dictionaries_b_a, model_options_b_a)
     
-
 
     print '############################'
     print 'len(r_a_b)', len(worddicts_r_a_b),
