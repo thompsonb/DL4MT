@@ -16,7 +16,7 @@ import numpy
 from theano.tensor.shared_randomstreams import RandomStreams
 
 from data_iterator import TextIterator, MonoIterator
-from nmt_client import default_model_options
+from nmt_client import default_model_options, pred_probs
 from nmt_utils import prepare_data, gen_sample
 from pyro_utils import setup_remotes, get_random_key, get_unused_port
 from util import load_dict
@@ -24,9 +24,6 @@ from util import load_dict
 profile = False
 bypass_pyro = False  # True
 LOCALMODELDIR = '' # TODO: add language model directory
-
-
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 def _add_dim(x_pre):
@@ -183,7 +180,6 @@ def monolingual_train(mt_systems, lm_1,
         if r_2 is None:  # failed due to assert
             logging.warning('WARNING: data prep failed (_x_prep is None). ignoring...')
             continue
-
 
         logging.debug('reward_mt10=%s', r_2)
 
@@ -497,10 +493,22 @@ def train2(model_options_a_b=None,
         # n_samples = 0
         logging.info('epoch=%d', eidx)
 
+        # validate models on validation set
+        # if valid_freq and numpy.mod(eidx, valid_freq) == 0:
+        # TODO: for not, validating every epoch... 
+        for _valid, _model_options, _remote_mt, _name in zip([valid_a_b,         valid_b_a        ],
+                                                             [model_options_a_b, model_options_b_a],
+                                                             [remote_mt_a_b,     remote_mt_b_a    ],
+                                                             ['a->b',            'b->a'           ], ):
+                _remote_mt.set_noise_val(0.)
+                valid_errs, _ = pred_probs(_remote_mt.x_f_log_probs, prepare_data, _model_options, _valid, verbose=False)
+                valid_err = valid_errs.mean()
+                logging.info('epoch=%d, MT %s valid_err=%.1f', eidx, _name, valid_err)
+
         for data_type, data in training:
 
             if data_type == 'mt':
-                print 'training on bitext'
+                logging.debug('training on bitext')
 
                 for (x, y), model_options, _remote_mt in zip(data,
                                                              [model_options_a_b, model_options_b_a],
@@ -538,7 +546,7 @@ def train2(model_options_a_b=None,
                     _remote_mt.x_f_update(lrate)
 
             elif data_type == 'mono-a':
-                print 'training the a -> b -> a loop.'
+                logging.info('#'*40 + 'training the a -> b -> a loop.')
                 ret = monolingual_train([remote_mt_a_b, remote_mt_b_a],
                                         remote_lm_b, data, trng, k, maxlen,
                                         [worddicts_r_a_b, worddicts_r_b_a],
@@ -546,7 +554,7 @@ def train2(model_options_a_b=None,
                                         alpha, learning_rate_big,
                                         learning_rate_small)
             elif data_type == 'mono-b':
-                print 'training the b -> a -> b loop.'
+                logging.info('#'*40 + 'training the b -> a -> b loop.')
                 ret = monolingual_train([remote_mt_b_a, remote_mt_a_b],
                                         remote_lm_a, data, trng, k, maxlen,
                                         [worddicts_r_b_a, worddicts_r_a_b],
@@ -556,6 +564,4 @@ def train2(model_options_a_b=None,
             else:
                 raise Exception('This should be unreachable. How did you get here?')
 
-        # TODO: validation!!
-
-    return valid_err
+    return None
