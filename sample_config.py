@@ -6,8 +6,8 @@ DATA_DIR = 'sample_run'
 LANG_A = 'en'
 LANG_B = 'de'
 
-LM_A = '/home/bjt/dummy_lm.zip'  # TODO
-LM_B = '/home/bjt/dummy_lm.zip'  # TODO
+LM_A = 'testLL/test_data/dummy_lm.zip'  # TODO
+LM_B = 'testLL/test_data/dummy_lm.zip'  # TODO
 
 MODELDIR_AB = os.path.join(WMT16_SYSTEMS_DIR, '%s-%s/'%(LANG_A, LANG_B))
 MODELDIR_BA = os.path.join(WMT16_SYSTEMS_DIR, '%s-%s/'%(LANG_B, LANG_A))
