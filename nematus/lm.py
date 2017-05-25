@@ -4,8 +4,6 @@ import pickle
 import tempfile
 import zipfile
 
-import requests
-
 from config import KENLM_PATH
 from pyro_utils import BGProc
 from config import PORT_NUMBER, TEMP_DIR
