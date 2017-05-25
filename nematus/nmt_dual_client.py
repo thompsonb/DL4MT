@@ -344,18 +344,16 @@ def train2(model_options_a_b=None,
                               sort_by_length=sort_by_length,
                               maxibatch_size=maxibatch_size)
 
-        if valid_datasets and valid_freq and False:
-            _ = TextIterator(valid_dataset_a, valid_dataset_b,
-                             dict_a, dict_b,
-                             n_words_source=model_opts['n_words_src'],
-                             n_words_target=model_opts['n_words'],
-                             batch_size=valid_batch_size,
-                             maxlen=maxlen)
-
-        return _train  # , _valid
+        _valid = TextIterator(valid_dataset_a, valid_dataset_b,
+                              dict_a, dict_b,
+                              n_words_source=model_opts['n_words_src'],
+                              n_words_target=model_opts['n_words'],
+                              batch_size=valid_batch_size,
+                              maxlen=maxlen)
+        
+        return _train, _valid
 
     def _load_mono_data(dataset,
-                        valid_dataset,
                         dict_list,
                         model_opts):
         _train = MonoIterator(dataset,
@@ -368,25 +366,20 @@ def train2(model_options_a_b=None,
                               sort_by_length=sort_by_length,
                               maxibatch_size=maxibatch_size)
 
-        if valid_datasets and valid_freq and False:
-            _ = MonoIterator(valid_dataset,
-                             dict_list,
-                             n_words_source=model_opts['n_words_src'],
-                             batch_size=valid_batch_size,
-                             maxlen=maxlen)
-
-        return _train  # , _valid
+        return _train  
 
     print 'Loading data'
     domain_interpolation_cur = None
 
-    train_a_b = _load_data(parallel_datasets[0], parallel_datasets[1], {}, {},  # TODO: Placeholders until we have fixed the valid_dataset
-                           [dictionaries_a_b[0], ], dictionaries_a_b[1], model_options_a_b)  # TODO: why a list?
+    train_a_b, valid_a_b = _load_data(parallel_datasets[0], parallel_datasets[1], 
+                                      valid_datasets[0], valid_datasets[1],
+                                      [dictionaries_a_b[0], ], dictionaries_a_b[1], model_options_a_b)  # TODO: why a list?
+    train_b_a, valid_b_a, = _load_data(parallel_datasets[1], parallel_datasets[0],
+                                       valid_datasets[1], valid_datasets[0], 
+                                       [dictionaries_b_a[0], ], dictionaries_b_a[1], model_options_b_a)  # TODO: why a list?
 
-    train_b_a = _load_data(parallel_datasets[1], parallel_datasets[0], {}, {},
-                           [dictionaries_b_a[0], ], dictionaries_b_a[1], model_options_b_a)  # TODO: why a list?
-    train_a = _load_mono_data(monolingual_datasets[0], {}, (dictionaries_a_b[0],), model_options_a_b)
-    train_b = _load_mono_data(monolingual_datasets[1], {}, (dictionaries_b_a[0],), model_options_b_a)
+    train_a = _load_mono_data(monolingual_datasets[0], (dictionaries_a_b[0],), model_options_a_b)
+    train_b = _load_mono_data(monolingual_datasets[1], (dictionaries_b_a[0],), model_options_b_a)
 
     def _data_generator(data_a_b, data_b_a, mono_a, mono_b):
         while True:
@@ -557,5 +550,7 @@ def train2(model_options_a_b=None,
                                         learning_rate_small)
             else:
                 raise Exception('This should be unreachable. How did you get here?')
+
+        # TODO: validation!!
 
     return valid_err

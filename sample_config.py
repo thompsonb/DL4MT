@@ -17,8 +17,8 @@ LM_B = 'testLL/test_data/dummy_lm.zip'  # TODO
 MODELDIR_AB = os.path.join(WMT16_SYSTEMS_DIR, '%s-%s/'%(LANG_A, LANG_B))
 MODELDIR_BA = os.path.join(WMT16_SYSTEMS_DIR, '%s-%s/'%(LANG_B, LANG_A))
 
-PARALLEL_DATASETS=('testLL/test_data/bi.'+LANG_A, 'testLL/test_data/bi.'+LANG_B)
+PARALLEL_DATASETS=('testLL/test_data/bi_train.'+LANG_A, 'testLL/test_data/bi_train.'+LANG_B)
 
 MONOLINGUAL_DATASETS=('testLL/test_data/mono.'+LANG_A, 'testLL/test_data/mono.'+LANG_B)
 
-VALID_DATASETS=('data/newsdev2016.bpe.ro', 'data/newsdev2016.bpe.en') # TODO!!
+VALID_DATASETS=('testLL/test_data/bi_valid.'+LANG_A, 'testLL/test_data/bi_valid.'+LANG_B)
