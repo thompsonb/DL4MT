@@ -7,6 +7,7 @@ Build a neural machine translation model with soft attention
 import copy
 import os
 import sys
+import json
 import time
 import logging
 from copy import deepcopy
@@ -467,16 +468,21 @@ def train2(model_options_a_b=None,
 
     for idx, model_options in zip(range(2), [model_options_a_b, model_options_b_a]):
         # reload history
-        if model_options['reload_'] and os.path.exists(model_options['saveto']):
-            rmodel = numpy.load(model_options['saveto'])
+        loading_str = '%s.%s.json' % (model_options['saveto'], model_options['times_saved'])
+        if model_options['reload_'] and os.path.exists(loading_str):
+            rmodel = numpy.load(loading_str)
             history_errs[idx] = list(rmodel['history_errs'])
-            # modify saveto so as not to overwrite original model
+            # modify saveto so as not to overwrite original model # Update, should be done
             #            model_options['saveto']=os.path.join(LOCALMODELDIR, basename(model_options['saveto']))
             # if 'uidx' in rmodel:
             #     uidx[idx] = rmodel['uidx']
 
-            # save model options
-            #        json.dump(model_options, open('%s.json' % model_options['saveto'], 'wb'), indent=2)
+        # Nematus originally used uidx, but with 2, to prevent race conditions and save history,
+        # using a separate, hackier saving method
+
+        # save model options
+        model_options['times_saved'] = model_options['times_saved'] + 1
+        json.dump(model_options, open('%s.%s.json' % (model_options['saveto'], model_options['times_saved']), 'wb'), indent=2)
 
     if valid_freq == -1:
         valid_freq = len(training[0]) / batch_size

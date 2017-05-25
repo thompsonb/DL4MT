@@ -12,7 +12,7 @@ from copy import deepcopy
 def build_model_options(default_model_options, model_dir, lang0, lang1):
     model_options = deepcopy(default_model_options)
     model_options.update(json.loads(open(model_dir+'model.npz.json').read()))
-    model_options['saveto'] = model_dir + 'model.npz'
+    model_options['saveto'] = model_dir + 'model.%s-%s.npz' % (lang0, lang1)
     model_options['dictionaries'] = [model_dir + 'vocab.%s.json' % lang0,
                                      model_dir + 'vocab.%s.json' % lang1]
     # TODO: other paths... datasets, valid_datasets?

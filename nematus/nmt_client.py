@@ -42,6 +42,7 @@ default_model_options = dict(
     n_words=None,  # target vocabulary size
     optimizer='adadelta',
     saveto='model.npz',
+    times_saved=0, # save incremental models
     use_dropout=False,
     dropout_embedding=0.2,  # dropout for input embeddings (0: no dropout)
     dropout_hidden=0.5,  # dropout for hidden layers (0: no dropout)
