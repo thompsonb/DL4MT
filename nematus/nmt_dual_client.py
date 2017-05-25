@@ -8,6 +8,7 @@ import copy
 import os
 import sys
 import time
+import logging
 from copy import deepcopy
 
 import Pyro4
@@ -71,7 +72,7 @@ def monolingual_train(mt_systems, lm_1,
         try:
             print 'sent 0:', ' '.join([num2word_01[0][foo[0]] for foo in sent])
         except:
-            print 'could not print sent 0'
+            logging.error('could not print sent 0')
 
         # TRANSLATE 0->1
         sents1_01, scores_1, _, _, _ = gen_sample([mt_01.x_f_init],
@@ -88,7 +89,7 @@ def monolingual_train(mt_systems, lm_1,
             for ii, sent1_01 in enumerate(sents1_01):
                 print 'sent 0->1 #%d (in system 01 vocab):'%ii, ' '.join([num2word_01[1][foo] for foo in sent1_01])
         except:
-            print 'failed to print sent 0->1 sentences (in system 01 vocab)'
+            logging.error('failed to print sent 0->1 sentences (in system 01 vocab)')
 
         # strip out <eos>, </s> tags (I have no idea where </s> is coming from!)
         sents1_01_tmp = []
@@ -109,7 +110,7 @@ def monolingual_train(mt_systems, lm_1,
                 sents0_01_clean.append([x[0] for x in sent])
 
         if len(sents1_01_clean) == 0:
-            print "No acceptable length data out of 0->1 system"
+            logging.warning("No acceptable length data out of 0->1 system")
             continue
 
         # LANGUAGE MODEL SCORE IN LANG 1        
@@ -130,7 +131,7 @@ def monolingual_train(mt_systems, lm_1,
             for ii, sent1_01 in enumerate(sents1_10_clean):
                 print 'sent 0->1 (in system 10 vocab) #%d:'%ii, ' '.join([num2word_10[0][foo] for foo in sent1_01])
         except:
-            print 'failed to print sent 0->1 sentences (in system 10 vocab)'
+            logging.error('failed to print sent 0->1 sentences (in system 10 vocab)')
 
 
         sents0_10_clean = []
@@ -145,7 +146,7 @@ def monolingual_train(mt_systems, lm_1,
             for ii, sent0_10 in enumerate(sents0_10_clean):
                 print 'sent 0 (in system 10 vocab) #%d:'%ii, ' '.join([num2word_10[1][foo] for foo in sent0_10])
         except:
-            print 'failed to print sent 0 sentences (in system 10 vocab)'
+            logging.error('failed to print sent 0 sentences (in system 10 vocab)')
 
 
         # MT 0->1 SCORE AND UPDATE
@@ -160,9 +161,9 @@ def monolingual_train(mt_systems, lm_1,
                                            return_hyp_graph=False)
 
         try:
-            print '[just for debug] first sentence from 0->1->0 (in system 10 vocab)', ' '.join([num2word_10[1][x] for x in sents0_10[0]])
+            logging.debug('[just for debug] first sentence from 0->1->0 (in system 10 vocab)', ' '.join([num2word_10[1][x] for x in sents0_10[0]]))
         except:
-            print 'failed to print 0->1->0 sentences'
+            logging.warning('failed to print 0->1->0 sentences')
 
         per_sent_weight = [(1 - alpha) / k for _ in sents1_01_clean]
 
@@ -172,7 +173,7 @@ def monolingual_train(mt_systems, lm_1,
                          per_sent_weight, learning_rate_big, maxlen)
 
         if r_2 is None:  # failed due to assert
-            print 'WARNING: data prep failed (_x_prep is None). ignoring...'
+            logging.warning('WARNING: data prep failed (_x_prep is None). ignoring...')
             continue
             
 
@@ -238,8 +239,8 @@ def train(**kwargs):
                        })
 
         with setup_remotes(
-                remote_metadata_list=[dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_a_b'], gpu_id=1),
-                                      dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_b_a'], gpu_id=2),
+                remote_metadata_list=[dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_a_b'], gpu_id=0),
+                                      dict(script=nmt_remote_script, name=kwargs['pyro_name_mt_b_a'], gpu_id=0),
                                       dict(script=lm_remote_script, name=kwargs['pyro_name_lm_a'], gpu_id=-1),
                                       dict(script=lm_remote_script, name=kwargs['pyro_name_lm_b'], gpu_id=-1)],
                 pyro_port=kwargs['pyro_port'],
@@ -531,7 +532,7 @@ def train2(model_options_a_b=None,
                     _remote_mt.set_noise_val(1.)
 
                     if x_prep is None:
-                        print 'Minibatch with zero sample under length ', maxlen
+                        logging.warning('Minibatch with zero sample under length ', maxlen)
                         # uidx -= 1
                         continue
 
@@ -540,7 +541,7 @@ def train2(model_options_a_b=None,
                     # check for bad numbers, usually we remove non-finite elements
                     # and continue training - but not done here
                     if numpy.isnan(cost) or numpy.isinf(cost):
-                        print 'NaN detected'
+                        logging.warning('NaN detected')
                         return 1., 1., 1.
 
                     # do the update on parameters
