@@ -192,6 +192,11 @@ class RemoteMT(object):
         for k in params:
             print k, 'norm', numpy.linalg.norm(params[k]), 'max', numpy.max(params[k]), 'min', numpy.min(params[k])
 
+    def save_remote_model(self, location):
+        #self.get_params_from_theano()
+        #numpy.savez(location, history_errs=history_errs,
+        #            uidx=uidx, **self.get_params_from_theano())
+        numpy.savez(location, **self.get_params_from_theano())
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='todo')

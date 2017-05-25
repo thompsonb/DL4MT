@@ -194,6 +194,10 @@ def monolingual_train(mt_systems, lm_1,
         final_r = _train_foo(mt_01, sents0_10_clean, sents1_10_clean, per_sent_weight,
                              learning_rate_small, maxlen)
 
+
+
+
+
         logging.debug('final_r=%s', final_r)
 
     return 1
@@ -259,7 +263,7 @@ def train2(model_options_a_b=None,
            max_epochs=5000,
            finish_after=10000000,
            disp_freq=100,
-           save_freq=1000,
+           save_freq=1, #was, but im using epochs, not iters1000,
            lrate=0.01,
            maxlen=100,
            batch_size=16,
@@ -468,7 +472,7 @@ def train2(model_options_a_b=None,
 
     for idx, model_options in zip(range(2), [model_options_a_b, model_options_b_a]):
         # reload history
-        loading_str = '%s.%s.json' % (model_options['saveto'], model_options['times_saved'])
+        loading_str = '%s.%s.npz' % (model_options['saveto'], model_options['times_saved'])
         if model_options['reload_'] and os.path.exists(loading_str):
             rmodel = numpy.load(loading_str)
             history_errs[idx] = list(rmodel['history_errs'])
@@ -481,8 +485,8 @@ def train2(model_options_a_b=None,
         # using a separate, hackier saving method
 
         # save model options
-        model_options['times_saved'] = model_options['times_saved'] + 1
         json.dump(model_options, open('%s.%s.json' % (model_options['saveto'], model_options['times_saved']), 'wb'), indent=2)
+        model_options['times_saved'] = model_options['times_saved'] + 1
 
     if valid_freq == -1:
         valid_freq = len(training[0]) / batch_size
@@ -563,5 +567,23 @@ def train2(model_options_a_b=None,
                                         learning_rate_small)
             else:
                 raise Exception('This should be unreachable. How did you get here?')
+
+        # Save the best model so far, in addition, save the latest model
+        # into a separate file with the iteration number for external eval
+        if numpy.mod(eidx, save_freq) == 0:
+            for model_options, _remote_mt in zip([model_options_a_b, model_options_b_a],
+                                                     [remote_mt_a_b,     remote_mt_b_a    ]):
+                print 'Saving the model for the {} time...'.format(model_options['times_saved']),
+                saveto_npz = '%s.%s.npz' % (model_options['saveto'], model_options['times_saved'])
+                _remote_mt.save_remote_model(saveto_npz)
+                json.dump(model_options, open('%s.%s.json' % (model_options['saveto'], model_options['times_saved']), 'wb'), indent=2)
+                model_options['times_saved'] = model_options['times_saved'] + 1
+                print 'Done'
+
+                #TODO: Keep track of which is the best, then save that separately as well
+                # requires getting remote params from theano and setting them
+
+                #TODO: Check that not saving history_errs or uidx doesn't break model format
+
 
     return valid_err
