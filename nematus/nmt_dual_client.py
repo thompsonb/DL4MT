@@ -161,7 +161,8 @@ def monolingual_train(mt_systems, lm_1,
                                            return_hyp_graph=False)
 
         try:
-            logging.debug('[just for debug] first sentence from 0->1->0 (in system 10 vocab)', ' '.join([num2word_10[1][x] for x in sents0_10[0]]))
+            logging.debug('[just for debug] first sentence from 0->1->0 (in system 10 vocab)')
+            logging.debug(' '.join([num2word_10[1][x] for x in sents0_10[0]]))
         except:
             logging.warning('failed to print 0->1->0 sentences')
 
@@ -534,7 +535,8 @@ def train2(model_options_a_b=None,
                     _remote_mt.set_noise_val(1.)
 
                     if x_prep is None:
-                        logging.warning('Minibatch with zero sample under length ', maxlen)
+                        logging.warning('Minibatch with zero sample under length ')
+                        logging.warning(maxlen)
                         # uidx -= 1
                         continue
 
