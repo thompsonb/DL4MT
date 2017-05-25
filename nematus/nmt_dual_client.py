@@ -86,9 +86,9 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent1_01 in enumerate(sents1_01):
-                print 'sent 0->1 #%d (in system A vocab):'%ii, ' '.join([num2word_01[1][foo] for foo in sent1_01])
+                print 'sent 0->1 #%d (in system 01 vocab):'%ii, ' '.join([num2word_01[1][foo] for foo in sent1_01])
         except:
-            print 'failed to print sent 0->1 sentences (in system A vocab)'
+            print 'failed to print sent 0->1 sentences (in system 01 vocab)'
 
         # strip out <eos>, </s> tags (I have no idea where </s> is coming from!)
         sents1_01_tmp = []
@@ -128,9 +128,9 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent1_01 in enumerate(sents1_10_clean):
-                print 'sent 0->1 (in system B vocab) #%d:'%ii, ' '.join([num2word_10[0][foo] for foo in sent1_01])
+                print 'sent 0->1 (in system 10 vocab) #%d:'%ii, ' '.join([num2word_10[0][foo] for foo in sent1_01])
         except:
-            print 'failed to print sent 0->1 sentences (in system B vocab)'
+            print 'failed to print sent 0->1 sentences (in system 10 vocab)'
 
 
         sents0_10_clean = []
@@ -143,9 +143,9 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent0_10 in enumerate(sents0_10_clean):
-                print 'sent 0 (in system B vocab) #%d:'%ii, ' '.join([num2word_10[1][foo] for foo in sent0_10])
+                print 'sent 0 (in system 10 vocab) #%d:'%ii, ' '.join([num2word_10[1][foo] for foo in sent0_10])
         except:
-            print 'failed to print sent 0 sentences (in system B vocab)'
+            print 'failed to print sent 0 sentences (in system 10 vocab)'
 
 
         # MT 0->1 SCORE AND UPDATE
@@ -160,7 +160,7 @@ def monolingual_train(mt_systems, lm_1,
                                            return_hyp_graph=False)
 
         try:
-            print '[just for debug] first sentence from 0->1->0 (in system B vocab)', ' '.join([num2word_10[1][x] for x in sents0_10[0]])
+            print '[just for debug] first sentence from 0->1->0 (in system 10 vocab)', ' '.join([num2word_10[1][x] for x in sents0_10[0]])
         except:
             print 'failed to print 0->1->0 sentences'
 
@@ -508,8 +508,9 @@ def train2(model_options_a_b=None,
 
                 print 'training on bitext'
 
-                for (x, y), model_options, _remote_mt in zip(data, [model_options_a_b, model_options_b_a],
-                                                             [remote_mt_a_b, remote_mt_b_a]):
+                for (x, y), model_options, _remote_mt in zip(data, 
+                                                             [model_options_a_b, model_options_b_a],
+                                                             [remote_mt_a_b,     remote_mt_b_a    ]):
 
                     # ensure consistency in number of factors
                     if len(x) and len(x[0]) and len(x[0][0]) != model_options['factors']:

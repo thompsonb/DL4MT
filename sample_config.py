@@ -10,7 +10,7 @@ LM_A = '/home/bjt/dummy_lm.zip'  # TODO
 LM_B = '/home/bjt/dummy_lm.zip'  # TODO
 
 MODELDIR_AB = os.path.join(WMT16_SYSTEMS_DIR, '%s-%s/'%(LANG_A, LANG_B))
-MODELDIR_BA = os.path.join(WMT16_SYSTEMS_DIR, '%s-%s/'%(LANG_A, LANG_B))
+MODELDIR_BA = os.path.join(WMT16_SYSTEMS_DIR, '%s-%s/'%(LANG_B, LANG_A))
 
 PARALLEL_DATASETS=('testLL/test_data/bi.'+LANG_A, 'testLL/test_data/bi.'+LANG_B)
 
