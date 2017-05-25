@@ -16,7 +16,7 @@ from data_iterator import TextIterator
 from nmt import (pred_probs, build_model, prepare_data)
 from theano_util import init_theano_params
 from util import load_config
-from config import temp_loc
+from config import TEMP_DIR
 
 
 def rescore_model(source_file, nbest_file, saveto, models, options, b, normalize, verbose, alignweights):
@@ -64,10 +64,10 @@ def rescore_model(source_file, nbest_file, saveto, models, options, b, normalize
 
     if alignweights:  # opening the temporary file.
         temp_name = saveto.name + ".json"
-        align_OUT = tempfile.NamedTemporaryFile(prefix=temp_name, dir=temp_loc)
+        align_OUT = tempfile.NamedTemporaryFile(prefix=temp_name, dir=TEMP_DIR)
 
-    with tempfile.NamedTemporaryFile(prefix='rescore-tmpin', dir=temp_loc) as tmp_in, \
-            tempfile.NamedTemporaryFile(prefix='rescore-tmpout', dir=temp_loc) as tmp_out:
+    with tempfile.NamedTemporaryFile(prefix='rescore-tmpin', dir=TEMP_DIR) as tmp_in, \
+            tempfile.NamedTemporaryFile(prefix='rescore-tmpout', dir=TEMP_DIR) as tmp_out:
         for line in nbest_lines:
             linesplit = line.split(' ||| ')
             idx = int(linesplit[0])   # index from the source file. Starting from 0.

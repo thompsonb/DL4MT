@@ -26,6 +26,9 @@ bypass_pyro = False  # True
 LOCALMODELDIR = '' # TODO: add language model directory
 
 
+logging.getLogger().setLevel(logging.DEBUG)
+
+
 def _add_dim(x_pre):
     # add an extra dimension, as expected on x input to prepare_data
     # TODO: assuming no factors!
@@ -67,10 +70,10 @@ def monolingual_train(mt_systems, lm_1,
     word2num_01, word2num_10 = worddicts
 
     for sent in data:
-        print '#'*20, 'NEW SENTENCE'
+        logging.info('#'*20 + 'NEW SENTENCE')
 
         try:
-            print 'sent 0:', ' '.join([num2word_01[0][foo[0]] for foo in sent])
+            logging.debug('sent 0: %s', ' '.join([num2word_01[0][foo[0]] for foo in sent]))
         except:
             logging.error('could not print sent 0')
 
@@ -87,7 +90,8 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent1_01 in enumerate(sents1_01):
-                print 'sent 0->1 #%d (in system 01 vocab):'%ii, ' '.join([num2word_01[1][foo] for foo in sent1_01])
+                logging.debug('sent 0->1 #%d (in system 01 vocab): %s', 
+                              ii, ' '.join([num2word_01[1][foo] for foo in sent1_01]))
         except:
             logging.error('failed to print sent 0->1 sentences (in system 01 vocab)')
 
@@ -102,20 +106,20 @@ def monolingual_train(mt_systems, lm_1,
         sents0_01_clean = []
         for ii, sent_1 in enumerate(sents1_01):
             if len(sent_1) < 2:
-                print 'len(sent #%d)=%d, < 2. skipping'%(ii, len(sent_1))
+                logging.debug('len(sent1 #%d)=%d, < 2. skipping', ii, len(sent_1))
             elif len(sent_1) >= maxlen:
-                print 'len(sent #%d)=%d, > %d. skipping'%(ii, len(sent_1), maxlen)
+                logging.debug('len(sent1 #%d)=%d, >= %d. skipping', ii, len(sent_1), maxlen)
             else:
                 sents1_01_clean.append(sent_1)
                 sents0_01_clean.append([x[0] for x in sent])
 
         if len(sents1_01_clean) == 0:
-            logging.warning("No acceptable length data out of 0->1 system")
+            logging.info("No acceptable length data out of 0->1 system")
             continue
 
         # LANGUAGE MODEL SCORE IN LANG 1        
         r_1 = lm_1.score(numpy.array(sents1_01_clean).T)
-        print "scores_lm1", r_1
+        logging.debug("scores_lm1=%s", r_1)
 
         # The two MT systems have different vocabularies
         # Convert from mt01's vocab to mt10's vocab
@@ -129,7 +133,8 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent1_01 in enumerate(sents1_10_clean):
-                print 'sent 0->1 (in system 10 vocab) #%d:'%ii, ' '.join([num2word_10[0][foo] for foo in sent1_01])
+                logging.debug('sent 0->1 #%d (in system 10 vocab): %s', 
+                              ii, ' '.join([num2word_10[0][foo] for foo in sent1_01]) )
         except:
             logging.error('failed to print sent 0->1 sentences (in system 10 vocab)')
 
@@ -144,31 +149,33 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent0_10 in enumerate(sents0_10_clean):
-                print 'sent 0 (in system 10 vocab) #%d:'%ii, ' '.join([num2word_10[1][foo] for foo in sent0_10])
+                logging.debug('sent 0 #%d (in system 10 vocab): %s', 
+                              ii, ' '.join([num2word_10[1][foo] for foo in sent0_10]))
         except:
             logging.error('failed to print sent 0 sentences (in system 10 vocab)')
 
 
         # MT 0->1 SCORE AND UPDATE
-        sents0_10, _, _, _, _ = gen_sample([mt_10.x_f_init],
-                                           [mt_10.x_f_next],
-                                           numpy.array([[[x, ] for x in sents1_10_clean[0]], ]),
-                                           trng=trng, k=1,
-                                           maxlen=maxlen,
-                                           stochastic=False,
-                                           argmax=False,
-                                           suppress_unk=True,
-                                           return_hyp_graph=False)
-
-        try:
-            logging.debug('[just for debug] first sentence from 0->1->0 (in system 10 vocab)')
-            logging.debug(' '.join([num2word_10[1][x] for x in sents0_10[0]]))
-        except:
-            logging.warning('failed to print 0->1->0 sentences')
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            try:
+                sents0_10_for_debug, _, _, _, _ = gen_sample([mt_10.x_f_init],
+                                                             [mt_10.x_f_next],
+                                                             numpy.array([[[x, ] for x in sents1_10_clean[0]], ]),
+                                                             trng=trng, k=1,
+                                                             maxlen=maxlen,
+                                                             stochastic=False,
+                                                             argmax=False,
+                                                             suppress_unk=True,
+                                                             return_hyp_graph=False)
+                
+                logging.debug('[just for degug] sentence 0->1->0 #0 (in system 10 vocab): ') 
+                logging.debug(' '.join([num2word_10[1][x] for x in sents0_10_for_debug[0]]))
+            except:
+                logging.warning('failed to sample or print 0->1->0 sentences')
 
         per_sent_weight = [(1 - alpha) / k for _ in sents1_01_clean]
 
-        print 'psw10=', per_sent_weight
+        logging.debug('psw10=%s', per_sent_weight)
 
         r_2 = _train_foo(mt_10, sents1_10_clean, sents0_10_clean,
                          per_sent_weight, learning_rate_big, maxlen)
@@ -178,21 +185,17 @@ def monolingual_train(mt_systems, lm_1,
             continue
             
 
-        print 'reward_mt10', r_2
+        logging.debug('reward_mt10=%s', r_2)
 
         per_sent_weight = [-1 * (alpha * s1 + (1 - alpha) * s2) / k for s1, s2 in zip(r_1, r_2)]
-        print 'psw01=', per_sent_weight
+        logging.debug('psw01=%s', per_sent_weight)
 
         final_r = _train_foo(mt_01, sents0_10_clean, sents1_10_clean, per_sent_weight,
                              learning_rate_small, maxlen)
 
-        print final_r
+        logging.debug('final_r=%s', final_r)
 
     return 1
-
-
-def few_dict_items(a):
-    return [(x, a[x]) for x in list(a)[:15]], 'len=%d'%len(a)
 
 
 def check_model_options(model_options, dictionaries):
@@ -323,16 +326,6 @@ def train2(model_options_a_b=None,
     worddicts_b_a, worddicts_r_b_a = create_worddicts_and_update_model_options(dictionaries_b_a, model_options_b_a)
     
 
-    print '############################'
-    print 'len(r_a_b)', len(worddicts_r_a_b),
-    print 'r_a_b[0]', few_dict_items(worddicts_r_a_b[0]), '...'
-    print 'r_a_b[1]', few_dict_items(worddicts_r_a_b[1]), '...'
-    print 'r_b_a[0]', few_dict_items(worddicts_r_b_a[0]), '...'
-    print 'r_b_a[1]', few_dict_items(worddicts_r_b_a[1]), '...'
-    #print type(worddicts_a_b)
-    #print 'len(a_b)', len(worddicts_a_b)
-
-
     def _load_data(dataset_a,
                    dataset_b,
                    valid_dataset_a,
@@ -395,8 +388,7 @@ def train2(model_options_a_b=None,
     train_a = _load_mono_data(monolingual_datasets[0], {}, (dictionaries_a_b[0],), model_options_a_b)
     train_b = _load_mono_data(monolingual_datasets[1], {}, (dictionaries_b_a[0],), model_options_b_a)
 
-    def data_generator(data_a_b, data_b_a, mono_a, mono_b):
-        #    def data_generator(data_a_b, data_b_a, mono):
+    def _data_generator(data_a_b, data_b_a, mono_a, mono_b):
         while True:
             ab_a, ab_b = data_a_b.next()
             ba_b, ba_a = data_b_a.next()
@@ -406,8 +398,7 @@ def train2(model_options_a_b=None,
             yield 'mono-a', a  
             yield 'mono-b', b
 
-    training = data_generator(train_a_b, train_b_a, train_a, train_b)
-    #    training = data_generator(train_a_b, train_b_a, monoAB)
+    training = _data_generator(train_a_b, train_b_a, train_a, train_b)
 
     # In order to transfer numpy objects across the network, must use pickle as Pyro Serializer.
     # Also requires various environment flags (PYRO_SERIALIZERS_ACCEPTED, PYRO_SERIALIZER)
@@ -504,13 +495,14 @@ def train2(model_options_a_b=None,
     learning_rate_small = 0.0002 / batch_size  # gamma_1,t in paper, scaled by batch_size
     learning_rate_big = 0.02 / batch_size  # gamma_2,t in paper, scaled by batch_size
     for eidx in xrange(max_epochs):
-        n_samples = 0
+        # n_samples = 0
+        logging.info('epoch=%d', eidx)
 
         for data_type, data in training:
 
             if data_type == 'mt':
 
-                print 'training on bitext'
+                logging.debug('training on bitext')
 
                 for (x, y), model_options, _remote_mt in zip(data, 
                                                              [model_options_a_b, model_options_b_a],
@@ -518,11 +510,8 @@ def train2(model_options_a_b=None,
 
                     # ensure consistency in number of factors
                     if len(x) and len(x[0]) and len(x[0][0]) != model_options['factors']:
-                        sys.stderr.write(
-                            'Error: mismatch between number of factors in settings ({0}), '
-                            'and number in training corpus ({1})\n'.format(
-                                model_options['factors'], len(x[0][0])))
-                        sys.exit(1)
+                        logging.exception('Error: mismatch between number of factors in settings ({0}), '
+                                          'and number in training corpus ({1})\n'.format(model_options['factors'], len(x[0][0])))
 
                     # n_samples += len(x)  # TODO double count??
                     # last_disp_samples += len(x)
@@ -535,8 +524,7 @@ def train2(model_options_a_b=None,
                     _remote_mt.set_noise_val(1.)
 
                     if x_prep is None:
-                        logging.warning('Minibatch with zero sample under length ')
-                        logging.warning(maxlen)
+                        logging.warning('x_prep is None')
                         # uidx -= 1
                         continue
 
@@ -545,14 +533,14 @@ def train2(model_options_a_b=None,
                     # check for bad numbers, usually we remove non-finite elements
                     # and continue training - but not done here
                     if numpy.isnan(cost) or numpy.isinf(cost):
-                        logging.warning('NaN detected')
-                        return 1., 1., 1.
+                        logging.exception('NaN detected')
+                        #return 1., 1., 1.
 
                     # do the update on parameters
                     _remote_mt.x_f_update(lrate)
 
             elif data_type == 'mono-a':
-                print '#'*40, 'training the a -> b -> a loop.'
+                logging.info('#'*40 + 'training the a -> b -> a loop.')
                 ret = monolingual_train([remote_mt_a_b, remote_mt_b_a], 
                                         remote_lm_b, data, trng, k, maxlen,
                                         [worddicts_r_a_b, worddicts_r_b_a], 
@@ -568,6 +556,6 @@ def train2(model_options_a_b=None,
                                         alpha, learning_rate_big,
                                         learning_rate_small)
             else:
-                raise Exception('This should be unreachable. How did you get here.')
+                raise Exception('This should be unreachable. How did you get here?')
 
     return valid_err
