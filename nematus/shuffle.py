@@ -1,7 +1,7 @@
 import os
 import sys
 import random
-from config import temp_loc
+from config import TEMP_DIR
 import tempfile
 
 
@@ -25,7 +25,7 @@ def main(files, temporary=False):
         fds = []
         for ff in files:
             _, filename = os.path.split(ff)
-            fds.append(tempfile.TemporaryFile(prefix=filename+'.shuf', dir=temp_loc))
+            fds.append(tempfile.TemporaryFile(prefix=filename+'.shuf', dir=TEMP_DIR))
     else:
         fds = [open(ff+'.shuf', 'w') for ff in files]
 

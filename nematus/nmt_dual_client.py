@@ -26,6 +26,9 @@ bypass_pyro = False  # True
 LOCALMODELDIR = '' # TODO: add language model directory
 
 
+logging.getLogger().setLevel(logging.DEBUG)
+
+
 def _add_dim(x_pre):
     # add an extra dimension, as expected on x input to prepare_data
     # TODO: assuming no factors!
@@ -70,7 +73,7 @@ def monolingual_train(mt_systems, lm_1,
         print '#'*20, 'NEW SENTENCE'
 
         try:
-            print 'sent 0:', ' '.join([num2word_01[0][foo[0]] for foo in sent])
+            logging.debug('sent 0: %s', ' '.join([num2word_01[0][foo[0]] for foo in sent]))
         except:
             logging.error('could not print sent 0')
 
@@ -87,7 +90,8 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent1_01 in enumerate(sents1_01):
-                print 'sent 0->1 #%d (in system 01 vocab):'%ii, ' '.join([num2word_01[1][foo] for foo in sent1_01])
+                logging.debug('sent 0->1 #%d (in system 01 vocab): %s', 
+                              ii, ' '.join([num2word_01[1][foo] for foo in sent1_01]))
         except:
             logging.error('failed to print sent 0->1 sentences (in system 01 vocab)')
 
@@ -102,15 +106,15 @@ def monolingual_train(mt_systems, lm_1,
         sents0_01_clean = []
         for ii, sent_1 in enumerate(sents1_01):
             if len(sent_1) < 2:
-                print 'len(sent #%d)=%d, < 2. skipping'%(ii, len(sent_1))
+                logging.info('len(sent1 #%d)=%d, < 2. skipping', ii, len(sent_1))
             elif len(sent_1) >= maxlen:
-                print 'len(sent #%d)=%d, > %d. skipping'%(ii, len(sent_1), maxlen)
+                logging.info('len(sent1 #%d)=%d, >= %d. skipping', ii, len(sent_1), maxlen)
             else:
                 sents1_01_clean.append(sent_1)
                 sents0_01_clean.append([x[0] for x in sent])
 
         if len(sents1_01_clean) == 0:
-            logging.warning("No acceptable length data out of 0->1 system")
+            logging.info("No acceptable length data out of 0->1 system")
             continue
 
         # LANGUAGE MODEL SCORE IN LANG 1        
@@ -129,7 +133,8 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent1_01 in enumerate(sents1_10_clean):
-                print 'sent 0->1 (in system 10 vocab) #%d:'%ii, ' '.join([num2word_10[0][foo] for foo in sent1_01])
+                logging.debug('sent 0->1 #%d (in system 10 vocab): %s', 
+                              ii, ' '.join([num2word_10[0][foo] for foo in sent1_01]) )
         except:
             logging.error('failed to print sent 0->1 sentences (in system 10 vocab)')
 
@@ -144,26 +149,29 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent0_10 in enumerate(sents0_10_clean):
-                print 'sent 0 (in system 10 vocab) #%d:'%ii, ' '.join([num2word_10[1][foo] for foo in sent0_10])
+                logging.debug('sent 0 #%d (in system 10 vocab): %s', 
+                              ii, ' '.join([num2word_10[1][foo] for foo in sent0_10]))
         except:
             logging.error('failed to print sent 0 sentences (in system 10 vocab)')
 
 
         # MT 0->1 SCORE AND UPDATE
-        sents0_10, _, _, _, _ = gen_sample([mt_10.x_f_init],
-                                           [mt_10.x_f_next],
-                                           numpy.array([[[x, ] for x in sents1_10_clean[0]], ]),
-                                           trng=trng, k=1,
-                                           maxlen=maxlen,
-                                           stochastic=False,
-                                           argmax=False,
-                                           suppress_unk=True,
-                                           return_hyp_graph=False)
-
-        try:
-            logging.debug('[just for debug] first sentence from 0->1->0 (in system 10 vocab)', ' '.join([num2word_10[1][x] for x in sents0_10[0]]))
-        except:
-            logging.warning('failed to print 0->1->0 sentences')
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            try:
+                sents0_10_for_debug, _, _, _, _ = gen_sample([mt_10.x_f_init],
+                                                             [mt_10.x_f_next],
+                                                             numpy.array([[[x, ] for x in sents1_10_clean[0]], ]),
+                                                             trng=trng, k=1,
+                                                             maxlen=maxlen,
+                                                             stochastic=False,
+                                                             argmax=False,
+                                                             suppress_unk=True,
+                                                             return_hyp_graph=False)
+                
+                logging.debug('[just for degug] sentence 0->1->0 #0 (in system 10 vocab): %s', 
+                              ' '.join([num2word_10[1][x] for x in sents0_10_for_debug[0]]))
+            except:
+                logging.warning('failed to sample or print 0->1->0 sentences')
 
         per_sent_weight = [(1 - alpha) / k for _ in sents1_01_clean]
 
