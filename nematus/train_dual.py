@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import imp
+import logging
 
 from nmt_dual_client import train
 from util import build_model_options
@@ -24,6 +25,10 @@ if __name__ == '__main__':
 
     LM_A = run_config.LM_A
     LM_B = run_config.LM_B
+
+    LOGGING_LEVEL = run_config.LOGGING_LEVEL
+    logging.basicConfig(level=LOGGING_LEVEL)
+
 
     MODELDIR_AB = run_config.MODELDIR_AB
     MODELDIR_BA = run_config.MODELDIR_BA

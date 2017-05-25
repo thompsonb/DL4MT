@@ -168,8 +168,8 @@ def monolingual_train(mt_systems, lm_1,
                                                              suppress_unk=True,
                                                              return_hyp_graph=False)
                 
-                logging.debug('[just for degug] sentence 0->1->0 #0 (in system 10 vocab): %s', 
-                              ' '.join([num2word_10[1][x] for x in sents0_10_for_debug[0]]))
+                logging.debug('[just for degug] sentence 0->1->0 #0 (in system 10 vocab): ') 
+                logging.debug(' '.join([num2word_10[1][x] for x in sents0_10_for_debug[0]]))
             except:
                 logging.warning('failed to sample or print 0->1->0 sentences')
 
