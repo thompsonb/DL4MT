@@ -385,8 +385,6 @@ def train2(model_options_a_b=None,
     def _data_generator(data_a_b, data_b_a, mono_a, mono_b):
         if 'counter' not in _data_generator.__dict__:
              _data_generator.counter = 1.0
-        print(_data_generator.counter)
-
         while True:
             _data_generator.counter += max_epochs / 10000.0
             ab_a, ab_b = data_a_b.next()
@@ -505,7 +503,7 @@ def train2(model_options_a_b=None,
 
         # validate models on validation set
         # if valid_freq and numpy.mod(eidx, valid_freq) == 0:
-        # TODO: for not, validating every epoch... 
+        # TODO: for not, validating every epoch...
         for _valid, _model_options, _remote_mt, _name in zip([valid_a_b,         valid_b_a        ],
                                                              [model_options_a_b, model_options_b_a],
                                                              [remote_mt_a_b,     remote_mt_b_a    ],
