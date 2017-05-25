@@ -21,8 +21,8 @@ Theano should be compiled for a GPU. Tested with CUDA v ?? and cuDNN 5.1, but pr
 2. Modify nematus/config.py
     1. python_loc : The location of the python executable (2.7)
     2. cuda_loc : CUDA home (/usr/local/cuda)
-    3. KENLM_PATH : Location of KenLM install (exclude bin from the path, included with moses, simply point to /my/moses)
-    4. wmt16_systems_dir : Download this http://data.statmt.org/rsennrich/wmt16_systems/ and point to the download location
+    3. KENLM_PATH : Location of KenLM install (exclude bin from the path, included with moses, if you have moses installed, simply point to your moses dir)
+    4. wmt16_systems_dir : Download this http://data.statmt.org/rsennrich/wmt16_systems/ and point to the download location (wget -r --cut-dirs=2 -e robots=off -nH -np -R index.html* http://data.statmt.org/rsennrich/wmt16\_systems/ )
 3. Install the kenlm python wrapper : `pip install --user https://github.com/kpu/kenlm/archive/master.zip`
 4. Install other stuff : `pip install --user contextlib2 Pyro4`
 

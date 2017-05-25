@@ -43,8 +43,8 @@ if __name__ == '__main__':
                      maxlen=50,
                      # TODO: monolingual data
                      parallel_datasets=run_config.PARALLEL_DATASETS,
-                     monolingual_datasets=run_config.MONOLINGUAL_DATASETS, # HACK - passing in parallel
-                     valid_datasets=run_config.VALID_DATASETS,  # TODO!
+                     monolingual_datasets=run_config.MONOLINGUAL_DATASETS, 
+                     valid_datasets=run_config.VALID_DATASETS,  
                      dictionaries_a_b=[MODELDIR_AB + '/vocab.%s.json' % LANG_A, MODELDIR_AB + '/vocab.%s.json' % LANG_B],
                      dictionaries_b_a=[MODELDIR_BA + '/vocab.%s.json' % LANG_B, MODELDIR_BA + '/vocab.%s.json' % LANG_A],
                      valid_freq=10000,

@@ -17,7 +17,7 @@ import numpy
 from theano.tensor.shared_randomstreams import RandomStreams
 
 from data_iterator import TextIterator, MonoIterator
-from nmt_client import default_model_options
+from nmt_client import default_model_options, pred_probs
 from nmt_utils import prepare_data, gen_sample
 from pyro_utils import setup_remotes, get_random_key, get_unused_port
 from util import load_dict
@@ -25,9 +25,6 @@ from util import load_dict
 profile = False
 bypass_pyro = False  # True
 LOCALMODELDIR = '' # TODO: add language model directory
-
-
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 def _add_dim(x_pre):
@@ -60,9 +57,9 @@ def _train_foo(remote_mt, _xxx, _yyy, _per_sent_weight, _lrate, maxlen):
     return per_sent_mt_reward
 
 
-def monolingual_train(mt_systems, lm_1, 
-                      data, trng, k, maxlen, 
-                      worddicts_r, worddicts, 
+def monolingual_train(mt_systems, lm_1,
+                      data, trng, k, maxlen,
+                      worddicts_r, worddicts,
                       alpha, learning_rate_big,
                       learning_rate_small):
 
@@ -91,7 +88,7 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent1_01 in enumerate(sents1_01):
-                logging.debug('sent 0->1 #%d (in system 01 vocab): %s', 
+                logging.debug('sent 0->1 #%d (in system 01 vocab): %s',
                               ii, ' '.join([num2word_01[1][foo] for foo in sent1_01]))
         except:
             logging.error('failed to print sent 0->1 sentences (in system 01 vocab)')
@@ -118,7 +115,7 @@ def monolingual_train(mt_systems, lm_1,
             logging.info("No acceptable length data out of 0->1 system")
             continue
 
-        # LANGUAGE MODEL SCORE IN LANG 1        
+        # LANGUAGE MODEL SCORE IN LANG 1
         r_1 = lm_1.score(numpy.array(sents1_01_clean).T)
         logging.debug("scores_lm1=%s", r_1)
 
@@ -134,7 +131,7 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent1_01 in enumerate(sents1_10_clean):
-                logging.debug('sent 0->1 #%d (in system 10 vocab): %s', 
+                logging.debug('sent 0->1 #%d (in system 10 vocab): %s',
                               ii, ' '.join([num2word_10[0][foo] for foo in sent1_01]) )
         except:
             logging.error('failed to print sent 0->1 sentences (in system 10 vocab)')
@@ -150,7 +147,7 @@ def monolingual_train(mt_systems, lm_1,
 
         try:
             for ii, sent0_10 in enumerate(sents0_10_clean):
-                logging.debug('sent 0 #%d (in system 10 vocab): %s', 
+                logging.debug('sent 0 #%d (in system 10 vocab): %s',
                               ii, ' '.join([num2word_10[1][foo] for foo in sent0_10]))
         except:
             logging.error('failed to print sent 0 sentences (in system 10 vocab)')
@@ -168,8 +165,8 @@ def monolingual_train(mt_systems, lm_1,
                                                              argmax=False,
                                                              suppress_unk=True,
                                                              return_hyp_graph=False)
-                
-                logging.debug('[just for degug] sentence 0->1->0 #0 (in system 10 vocab): ') 
+
+                logging.debug('[just for degug] sentence 0->1->0 #0 (in system 10 vocab): ')
                 logging.debug(' '.join([num2word_10[1][x] for x in sents0_10_for_debug[0]]))
             except:
                 logging.warning('failed to sample or print 0->1->0 sentences')
@@ -184,7 +181,6 @@ def monolingual_train(mt_systems, lm_1,
         if r_2 is None:  # failed due to assert
             logging.warning('WARNING: data prep failed (_x_prep is None). ignoring...')
             continue
-            
 
         logging.debug('reward_mt10=%s', r_2)
 
@@ -329,7 +325,7 @@ def train2(model_options_a_b=None,
 
     worddicts_a_b, worddicts_r_a_b = create_worddicts_and_update_model_options(dictionaries_a_b, model_options_a_b)
     worddicts_b_a, worddicts_r_b_a = create_worddicts_and_update_model_options(dictionaries_b_a, model_options_b_a)
-    
+
 
     def _load_data(dataset_a,
                    dataset_b,
@@ -349,18 +345,16 @@ def train2(model_options_a_b=None,
                               sort_by_length=sort_by_length,
                               maxibatch_size=maxibatch_size)
 
-        if valid_datasets and valid_freq and False:
-            _ = TextIterator(valid_dataset_a, valid_dataset_b,
-                             dict_a, dict_b,
-                             n_words_source=model_opts['n_words_src'],
-                             n_words_target=model_opts['n_words'],
-                             batch_size=valid_batch_size,
-                             maxlen=maxlen)
+        _valid = TextIterator(valid_dataset_a, valid_dataset_b,
+                              dict_a, dict_b,
+                              n_words_source=model_opts['n_words_src'],
+                              n_words_target=model_opts['n_words'],
+                              batch_size=valid_batch_size,
+                              maxlen=maxlen)
 
-        return _train  # , _valid
+        return _train, _valid
 
     def _load_mono_data(dataset,
-                        valid_dataset,
                         dict_list,
                         model_opts):
         _train = MonoIterator(dataset,
@@ -373,35 +367,36 @@ def train2(model_options_a_b=None,
                               sort_by_length=sort_by_length,
                               maxibatch_size=maxibatch_size)
 
-        if valid_datasets and valid_freq and False:
-            _ = MonoIterator(valid_dataset,
-                             dict_list,
-                             n_words_source=model_opts['n_words_src'],
-                             batch_size=valid_batch_size,
-                             maxlen=maxlen)
-
-        return _train  # , _valid
+        return _train
 
     print 'Loading data'
     domain_interpolation_cur = None
 
-    train_a_b = _load_data(parallel_datasets[0], parallel_datasets[1], {}, {},  # TODO: Placeholders until we have fixed the valid_dataset
-                           [dictionaries_a_b[0], ], dictionaries_a_b[1], model_options_a_b)  # TODO: why a list?
+    train_a_b, valid_a_b = _load_data(parallel_datasets[0], parallel_datasets[1],
+                                      valid_datasets[0], valid_datasets[1],
+                                      [dictionaries_a_b[0], ], dictionaries_a_b[1], model_options_a_b)  # TODO: why a list?
+    train_b_a, valid_b_a, = _load_data(parallel_datasets[1], parallel_datasets[0],
+                                       valid_datasets[1], valid_datasets[0],
+                                       [dictionaries_b_a[0], ], dictionaries_b_a[1], model_options_b_a)  # TODO: why a list?
 
-    train_b_a = _load_data(parallel_datasets[1], parallel_datasets[0], {}, {},
-                           [dictionaries_b_a[0], ], dictionaries_b_a[1], model_options_b_a)  # TODO: why a list?
-    train_a = _load_mono_data(monolingual_datasets[0], {}, (dictionaries_a_b[0],), model_options_a_b)
-    train_b = _load_mono_data(monolingual_datasets[1], {}, (dictionaries_b_a[0],), model_options_b_a)
+    train_a = _load_mono_data(monolingual_datasets[0], (dictionaries_a_b[0],), model_options_a_b)
+    train_b = _load_mono_data(monolingual_datasets[1], (dictionaries_b_a[0],), model_options_b_a)
 
     def _data_generator(data_a_b, data_b_a, mono_a, mono_b):
+        if 'counter' not in _data_generator.__dict__:
+             _data_generator.counter = 1.0
+        print(_data_generator.counter)
+
         while True:
+            _data_generator.counter += max_epochs / 10000.0
             ab_a, ab_b = data_a_b.next()
             ba_b, ba_a = data_b_a.next()
-            a = mono_a.next()
-            b = mono_b.next()
             yield 'mt', ((ab_a, ab_b), (ba_b, ba_a))
-            yield 'mono-a', a  
-            yield 'mono-b', b
+            for i in range(int(_data_generator.counter)):
+                a = mono_a.next()
+                b = mono_b.next()
+                yield 'mono-a', a
+                yield 'mono-b', b
 
     training = _data_generator(train_a_b, train_b_a, train_a, train_b)
 
@@ -508,13 +503,24 @@ def train2(model_options_a_b=None,
         # n_samples = 0
         logging.info('epoch=%d', eidx)
 
+        # validate models on validation set
+        # if valid_freq and numpy.mod(eidx, valid_freq) == 0:
+        # TODO: for not, validating every epoch... 
+        for _valid, _model_options, _remote_mt, _name in zip([valid_a_b,         valid_b_a        ],
+                                                             [model_options_a_b, model_options_b_a],
+                                                             [remote_mt_a_b,     remote_mt_b_a    ],
+                                                             ['a->b',            'b->a'           ], ):
+                _remote_mt.set_noise_val(0.)
+                valid_errs, _ = pred_probs(_remote_mt.x_f_log_probs, prepare_data, _model_options, _valid, verbose=False)
+                valid_err = valid_errs.mean()
+                logging.info('epoch=%d, MT %s valid_err=%.1f', eidx, _name, valid_err)
+
         for data_type, data in training:
 
             if data_type == 'mt':
-
                 logging.debug('training on bitext')
 
-                for (x, y), model_options, _remote_mt in zip(data, 
+                for (x, y), model_options, _remote_mt in zip(data,
                                                              [model_options_a_b, model_options_b_a],
                                                              [remote_mt_a_b,     remote_mt_b_a    ]):
 
@@ -551,18 +557,18 @@ def train2(model_options_a_b=None,
 
             elif data_type == 'mono-a':
                 logging.info('#'*40 + 'training the a -> b -> a loop.')
-                ret = monolingual_train([remote_mt_a_b, remote_mt_b_a], 
+                ret = monolingual_train([remote_mt_a_b, remote_mt_b_a],
                                         remote_lm_b, data, trng, k, maxlen,
-                                        [worddicts_r_a_b, worddicts_r_b_a], 
-                                        [worddicts_a_b,   worddicts_b_a], 
+                                        [worddicts_r_a_b, worddicts_r_b_a],
+                                        [worddicts_a_b,   worddicts_b_a],
                                         alpha, learning_rate_big,
                                         learning_rate_small)
             elif data_type == 'mono-b':
-                print '#'*40, 'training the b -> a -> b loop.'
-                ret = monolingual_train([remote_mt_b_a, remote_mt_a_b], 
+                logging.info('#'*40 + 'training the b -> a -> b loop.')
+                ret = monolingual_train([remote_mt_b_a, remote_mt_a_b],
                                         remote_lm_a, data, trng, k, maxlen,
-                                        [worddicts_r_b_a, worddicts_r_a_b], 
-                                        [worddicts_b_a,   worddicts_a_b], 
+                                        [worddicts_r_b_a, worddicts_r_a_b],
+                                        [worddicts_b_a,   worddicts_a_b],
                                         alpha, learning_rate_big,
                                         learning_rate_small)
             else:
@@ -586,4 +592,4 @@ def train2(model_options_a_b=None,
                 #TODO: Check that not saving history_errs or uidx doesn't break model format
 
 
-    return valid_err
+    return None
