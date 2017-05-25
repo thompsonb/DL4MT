@@ -2,6 +2,11 @@
 import os
 from nematus.config import WMT16_SYSTEMS_DIR
 
+GPU_ID_MT0 = 0
+GPU_ID_MT1 = 1
+GPU_ID_LM0 = -1 # place holder
+GPU_ID_LM1 = -1 # place holder
+
 DATA_DIR = 'sample_run'
 LANG_A = 'en'
 LANG_B = 'de'
