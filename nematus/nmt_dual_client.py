@@ -62,6 +62,8 @@ def monolingual_train(mt_systems, lm_1,
                       alpha, learning_rate_big,
                       learning_rate_small):
 
+    logging.info('monolingual_train called')
+
     mt_01, mt_10 = mt_systems
     num2word_01, num2word_10 = worddicts_r
     word2num_01, word2num_10 = worddicts
@@ -73,11 +75,9 @@ def monolingual_train(mt_systems, lm_1,
     batch_sents0_01_clean = []
     batch_per_trans_r1 = []
 
-    for sent in data:
-        logging.info('#'*20 + 'NEW SENTENCE')
-
+    for sent_ii, sent in enumerate(data):
         try:
-            logging.debug('sent 0: %s', ' '.join([num2word_01[0][foo[0]] for foo in sent]))
+            logging.debug('sent 0 #%d: %s', sent_ii, ' '.join([num2word_01[0][foo[0]] for foo in sent]))
         except:
             logging.error('could not print sent 0')
 
@@ -120,24 +120,24 @@ def monolingual_train(mt_systems, lm_1,
                 sents0_01_clean.append([x[0] for x in sent])
 
         if len(sents1_01_clean) == 0:
-            logging.info("No acceptable length data out of 0->1 system")
+            logging.info("No acceptable length data out of 0->1 system from sent0 #%d", sent_ii)
             continue
 
         # Keep track of how many translations were retained
         # This is messy
         # [2, 2, 3, 3, 3, 1, ...]
         for _ in range(len(sents1_01_clean)):
-          per_sent_translation_count.append(len(sents1_01_clean))
+            per_sent_translation_count.append(len(sents1_01_clean))
 
         # Add the clean translations to a list to track
-        batch_sents1_01_clean += sents1_01_clean
-        batch_sents0_01_clean += sents0_01_clean
+        batch_sents1_01_clean += sents1_01_clean # list extend
+        batch_sents0_01_clean += sents0_01_clean # list extend
 
         # LANGUAGE MODEL SCORE IN LANG 1
         # This will return a per-translation reward; it's a list of LM rewards
         r_1 = lm_1.score(numpy.array(sents1_01_clean).T)
         logging.debug("scores_lm1=%s", r_1)
-        batch_per_trans_r1 += r_1
+        batch_per_trans_r1 += r_1 # list extend
 
     ###################### END of per-sent per-trans translations ################
 
@@ -146,11 +146,14 @@ def monolingual_train(mt_systems, lm_1,
     logging.debug('batch_sents0_01_clean=%s',batch_sents0_01_clean)
     logging.debug('batch_per_trans_r1=%s',batch_per_trans_r1)
 
-
     logging.debug('len per_sent_translation_count=%s',len(per_sent_translation_count))
     logging.debug('len batch_sents1_01_clean=%s',len(batch_sents1_01_clean))
     logging.debug('len batch_sents0_01_clean=%s',len(batch_sents0_01_clean))
     logging.debug('len batch_per_trans_r1=%s',len(batch_per_trans_r1))
+
+    if len(batch_per_trans_r1) == 0:
+        logging.warn('no acceptable length sentences found in entire batch. exiting function early')
+        return
 
     # Make sure we got the book-keeping right
     assert len(per_sent_translation_count) == len(batch_sents1_01_clean)
@@ -165,7 +168,6 @@ def monolingual_train(mt_systems, lm_1,
         words = [w for w in words if w not in ('<eos>', '</s>')]
         num2 = [word2num_10[0][word] for word in words]
         batch_sents1_10_clean.append(num2)
-
 
     try:
         #TODO(Gaurav): fix this logging to not print all translations for all sentences
@@ -214,31 +216,40 @@ def monolingual_train(mt_systems, lm_1,
         except:
             logging.warning('failed to sample or print 0->1->0 sentences')
 
-    per_sent_weight = [-1 * (1 - alpha) / per_sent_translation_count[c_] \
-                       for c_ in range(len(per_sent_translation_count))]
 
-    print 'psw10=', per_sent_weight
+    per_sent_translation_count = numpy.array(per_sent_translation_count)
+    batch_per_trans_r1 = numpy.array(batch_per_trans_r1)
 
-    r_2 = _train_foo(mt_10, batch_sents1_10_clean, batch_sents0_10_clean,
-                     per_sent_weight, learning_rate_big, maxlen)
+    # Equation <todo>
+    # /per_sent_translation_count == 1/K
+    per_sent_weight = (1 - alpha) / per_sent_translation_count
 
-    if r_2 is None:  # failed due to assert
+    logging.info('psw10=%s', per_sent_weight)
+
+    r_2 = numpy.array(_train_foo(mt_10, batch_sents1_10_clean, batch_sents0_10_clean,
+                                 per_sent_weight, learning_rate_big, maxlen))
+
+    if r_2 is None:
         logging.warning('WARNING: data prep failed (_x_prep is None). exiting function early.')
         # code below will crash... TODO FIGURE OUT WHY THIS HAPPENS
         return 
 
-    logging.debug('r_2=%s', r_2)
+    logging.info('r_2=%s', r_2)
 
-    # TODO: Resume here
-    per_sent_weight = [-1 * (alpha * s1 + (1 - alpha) * s2) \
-                       / per_sent_translation_count[c_] for c_, (s1, s2) \
-                       in enumerate(zip(batch_per_trans_r1, r_2))]
-    logging.debug('psw01=%s', per_sent_weight)
+
+    # Equation <todo>
+    # /per_sent_translation_count: 1/K
+    # -1 because <todo>
+    logging.debug('part 1: %s', (alpha * batch_per_trans_r1) )  # negative
+    logging.debug('part 2: %s', (1 - alpha) * r_2 )             # negative
+    per_sent_weight = np_res = -1 * (alpha * batch_per_trans_r1 + (1 - alpha) * r_2) / per_sent_translation_count
+
+    logging.info('psw01=%s', per_sent_weight)
 
     final_r = _train_foo(mt_01, batch_sents0_10_clean, batch_sents1_10_clean,
                          per_sent_weight, learning_rate_small, maxlen)
 
-    print final_r
+    logging.info('final_r=%s', final_r)
 
 
 
