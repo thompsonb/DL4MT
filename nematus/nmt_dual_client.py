@@ -223,7 +223,9 @@ def monolingual_train(mt_systems, lm_1,
                      per_sent_weight, learning_rate_big, maxlen)
 
     if r_2 is None:  # failed due to assert
-        logging.warning('WARNING: data prep failed (_x_prep is None). ignoring...')
+        logging.warning('WARNING: data prep failed (_x_prep is None). exiting function early.')
+        # code below will crash... TODO FIGURE OUT WHY THIS HAPPENS
+        return 
 
     logging.debug('r_2=%s', r_2)
 
@@ -238,7 +240,6 @@ def monolingual_train(mt_systems, lm_1,
 
     print final_r
 
-    return 1
 
 
 def few_dict_items(a):
@@ -601,20 +602,20 @@ def train2(model_options_a_b=None,
 
             elif data_type == 'mono-a':
                 logging.info('#'*40 + 'training the a -> b -> a loop.')
-                ret = monolingual_train([remote_mt_a_b, remote_mt_b_a],
-                                        remote_lm_b, data, trng, k, maxlen,
-                                        [worddicts_r_a_b, worddicts_r_b_a],
-                                        [worddicts_a_b,   worddicts_b_a],
-                                        alpha, learning_rate_big,
-                                        learning_rate_small)
+                monolingual_train([remote_mt_a_b, remote_mt_b_a],
+                                  remote_lm_b, data, trng, k, maxlen,
+                                  [worddicts_r_a_b, worddicts_r_b_a],
+                                  [worddicts_a_b,   worddicts_b_a],
+                                  alpha, learning_rate_big,
+                                  learning_rate_small)
             elif data_type == 'mono-b':
                 logging.info('#'*40 + 'training the b -> a -> b loop.')
-                ret = monolingual_train([remote_mt_b_a, remote_mt_a_b],
-                                        remote_lm_a, data, trng, k, maxlen,
-                                        [worddicts_r_b_a, worddicts_r_a_b],
-                                        [worddicts_b_a,   worddicts_a_b],
-                                        alpha, learning_rate_big,
-                                        learning_rate_small)
+                monolingual_train([remote_mt_b_a, remote_mt_a_b],
+                                  remote_lm_a, data, trng, k, maxlen,
+                                  [worddicts_r_b_a, worddicts_r_a_b],
+                                  [worddicts_b_a,   worddicts_a_b],
+                                  alpha, learning_rate_big,
+                                  learning_rate_small)
             else:
                 raise Exception('This should be unreachable. How did you get here?')
 
