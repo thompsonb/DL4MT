@@ -70,7 +70,7 @@ def _train_foo(remote_mt, _xxx, _yyy, _per_sent_weight, _lrate, maxlen):
         raise Exception('lengths of _xxx, _yyy, and/or _per_sent_weight do not match')
 
     if len(_xxx) != numpy.shape(_x_prep)[-1]:
-        logging.warn('--BAD--    '*40 + 'I DO NOT KNOW WHY, BUT SOMETIMES prepare_data() DECIDEDS TO THROW SENTENCE AWAY!! TODO!! figure out what is going on. skipping.')
+        logging.warn('--BAD--    '*40 + 'I DO NOT KNOW WHY, BUT SOMETIMES prepare_data() DECIDES TO THROW SENTENCE AWAY!! TODO!! figure out what is going on. skipping.')
         return None
 
     remote_mt.set_noise_val(0.)
@@ -260,13 +260,15 @@ def monolingual_train(mt_systems, lm_1,
 
     logging.info('psw10=%s', per_sent_weight)
 
-    r_2 = numpy.array(_train_foo(mt_10, batch_sents1_10_clean, batch_sents0_10_clean,
-                                 per_sent_weight, learning_rate_big, maxlen))
+    r_2 = _train_foo(mt_10, batch_sents1_10_clean, batch_sents0_10_clean,
+                     per_sent_weight, learning_rate_big, maxlen)
 
     if r_2 is None:
         logging.warning('prepare_data() failed for some reason. returning early.')
         # code below will crash... TODO FIGURE OUT WHY THIS HAPPENS
         return 
+
+    r_2 = numpy.array(r_2)
 
     logging.info('r_2=%s', r_2)
 
