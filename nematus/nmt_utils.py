@@ -21,6 +21,8 @@ from alignment_util import get_alignments
 
 profile = False
 
+# make sure proper default for numpy error handling is restored
+numpy.seterr(divide='warn', over='warn', under='ignore', invalid='warn')
 
 # batch preparation
 def prepare_data(seqs_x, seqs_y, maxlen=None):
