@@ -38,7 +38,6 @@ def _add_dim(x_pre):
 def _train_foo(remote_mt, _xxx, _yyy, _per_sent_weight, _lrate, maxlen):
     _x_prep, _x_mask, _y_prep, _y_mask = prepare_data(_add_dim(_xxx), _yyy, maxlen=maxlen)
 
-
     if _x_prep is None:
         logging.warn('_x_prep is None')
         return None
@@ -67,6 +66,12 @@ def _train_foo(remote_mt, _xxx, _yyy, _per_sent_weight, _lrate, maxlen):
     except:
         logging.warn('logging shapes/types failed!')
 
+    if len(_xxx) != len(_yyy) != len(_per_sent_weight):
+        raise Exception('lengths of _xxx, _yyy, and/or _per_sent_weight do not match')
+
+    if len(_xxx) != numpy.shape(_x_prep)[-1]:
+        logging.warn('--BAD--    '*40 + 'I DO NOT KNOW WHY, BUT SOMETIMES prepare_data() DECIDEDS TO THROW SENTENCE AWAY!! TODO!! figure out what is going on. skipping.')
+        return None
 
     remote_mt.set_noise_val(0.)
     # returns cost, which is related to log probs BUT may be weighted per sentence, and may include regularization terms!
@@ -259,7 +264,7 @@ def monolingual_train(mt_systems, lm_1,
                                  per_sent_weight, learning_rate_big, maxlen))
 
     if r_2 is None:
-        logging.warning('WARNING: data prep failed (_x_prep is None). exiting function early.')
+        logging.warning('prepare_data() failed for some reason. returning early.')
         # code below will crash... TODO FIGURE OUT WHY THIS HAPPENS
         return 
 
