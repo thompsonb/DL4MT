@@ -37,8 +37,37 @@ def _add_dim(x_pre):
 
 def _train_foo(remote_mt, _xxx, _yyy, _per_sent_weight, _lrate, maxlen):
     _x_prep, _x_mask, _y_prep, _y_mask = prepare_data(_add_dim(_xxx), _yyy, maxlen=maxlen)
+
+
     if _x_prep is None:
+        logging.warn('_x_prep is None')
         return None
+
+    if _x_mask is None:
+        logging.warn('_x_mask is None')
+        return None
+
+    if _y_prep is None:
+        logging.warn('_y_prep is None')
+        return None
+
+    if _y_mask is None:
+        logging.warn('_y_mask is None')
+        return None
+
+    try:
+        logging.debug('_xxx shape: %s, type=%s', numpy.shape(_xxx), type(_xxx))
+        logging.debug('_yyy shape: %s, type=%s', numpy.shape(_yyy), type(_yyy))
+        logging.debug('_per_sent_weight shape: %s, type=%s', numpy.shape(_per_sent_weight), type(_per_sent_weight))
+        logging.debug('maxlen=%s', maxlen)
+        logging.debug('_x_prep shape: %s, type=%s', numpy.shape(_x_prep), type(_x_prep))
+        logging.debug('_x_mask shape: %s, type=%s', numpy.shape(_x_mask), type(_x_mask))
+        logging.debug('_y_prep shape: %s, type=%s', numpy.shape(_y_prep), type(_y_prep))
+        logging.debug('_y_mask shape: %s, type=%s', numpy.shape(_y_mask), type(_y_mask))
+    except:
+        logging.warn('logging shapes/types failed!')
+
+
     remote_mt.set_noise_val(0.)
     # returns cost, which is related to log probs BUT may be weighted per sentence, and may include regularization terms!
     cost = remote_mt.x_f_grad_shared(_x_prep, _x_mask, _y_prep, _y_mask, _per_sent_weight, per_sent_cost=True)
