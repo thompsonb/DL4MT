@@ -21,6 +21,9 @@ from alignment_util import get_alignments
 
 profile = False
 
+# Nematus relies on numpy.log(-numpy.inf) for suppressing unknowns
+# make sure numpy will not raise an exception because of nan
+numpy.seterr(divide='warn', over='warn', under='ignore', invalid='warn')
 
 # batch preparation
 def prepare_data(seqs_x, seqs_y, maxlen=None):
