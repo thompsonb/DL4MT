@@ -16,7 +16,7 @@ import numpy
 from theano.tensor.shared_randomstreams import RandomStreams
 
 from data_iterator import TextIterator, MonoIterator
-from nmt_client import default_model_options
+from nmt_client import default_model_options, pred_probs
 from nmt_utils import prepare_data, gen_sample
 from pyro_utils import setup_remotes, get_random_key, get_unused_port
 from util import load_dict
@@ -401,18 +401,16 @@ def train2(model_options_a_b=None,
                               sort_by_length=sort_by_length,
                               maxibatch_size=maxibatch_size)
 
-        if valid_datasets and valid_freq and False:
-            _ = TextIterator(valid_dataset_a, valid_dataset_b,
-                             dict_a, dict_b,
-                             n_words_source=model_opts['n_words_src'],
-                             n_words_target=model_opts['n_words'],
-                             batch_size=valid_batch_size,
-                             maxlen=maxlen)
+        _valid = TextIterator(valid_dataset_a, valid_dataset_b,
+                              dict_a, dict_b,
+                              n_words_source=model_opts['n_words_src'],
+                              n_words_target=model_opts['n_words'],
+                              batch_size=valid_batch_size,
+                              maxlen=maxlen)
 
-        return _train  # , _valid
+        return _train, _valid
 
     def _load_mono_data(dataset,
-                        valid_dataset,
                         dict_list,
                         model_opts):
         _train = MonoIterator(dataset,
@@ -425,27 +423,22 @@ def train2(model_options_a_b=None,
                               sort_by_length=sort_by_length,
                               maxibatch_size=maxibatch_size)
 
-        if valid_datasets and valid_freq and False:
-            _ = MonoIterator(valid_dataset,
-                             dict_list,
-                             n_words_source=model_opts['n_words_src'],
-                             batch_size=valid_batch_size,
-                             maxlen=maxlen)
-
-        return _train  # , _valid
+        return _train
 
     print 'Loading data'
     domain_interpolation_cur = None
 
-    train_a_b = _load_data(parallel_datasets[0], parallel_datasets[1], {}, {},  # TODO: Placeholders until we have fixed the valid_dataset
-                           [dictionaries_a_b[0], ], dictionaries_a_b[1], model_options_a_b)  # TODO: why a list?
+    train_a_b, valid_a_b = _load_data(parallel_datasets[0], parallel_datasets[1],
+                                      valid_datasets[0], valid_datasets[1],
+                                      [dictionaries_a_b[0], ], dictionaries_a_b[1], model_options_a_b)  # TODO: why a list?
+    train_b_a, valid_b_a, = _load_data(parallel_datasets[1], parallel_datasets[0],
+                                       valid_datasets[1], valid_datasets[0],
+                                       [dictionaries_b_a[0], ], dictionaries_b_a[1], model_options_b_a)  # TODO: why a list?
 
-    train_b_a = _load_data(parallel_datasets[1], parallel_datasets[0], {}, {},
-                           [dictionaries_b_a[0], ], dictionaries_b_a[1], model_options_b_a)  # TODO: why a list?
-    train_a = _load_mono_data(monolingual_datasets[0], {}, (dictionaries_a_b[0],), model_options_a_b)
-    train_b = _load_mono_data(monolingual_datasets[1], {}, (dictionaries_b_a[0],), model_options_b_a)
+    train_a = _load_mono_data(monolingual_datasets[0], (dictionaries_a_b[0],), model_options_a_b)
+    train_b = _load_mono_data(monolingual_datasets[1], (dictionaries_b_a[0],), model_options_b_a)
 
-    def data_generator(data_a_b, data_b_a, mono_a, mono_b):
+    def _data_generator(data_a_b, data_b_a, mono_a, mono_b):
         while True:
             ab_a, ab_b = data_a_b.next()
             ba_b, ba_a = data_b_a.next()
@@ -455,7 +448,7 @@ def train2(model_options_a_b=None,
             yield 'mono-a', a  
             yield 'mono-b', b
 
-    training = data_generator(train_a_b, train_b_a, train_a, train_b)
+    training = _data_generator(train_a_b, train_b_a, train_a, train_b)
 
     # In order to transfer numpy objects across the network, must use pickle as Pyro Serializer.
     # Also requires various environment flags (PYRO_SERIALIZERS_ACCEPTED, PYRO_SERIALIZER)
@@ -555,12 +548,24 @@ def train2(model_options_a_b=None,
         # n_samples = 0
         logging.info('epoch=%d', eidx)
 
+        # validation
+        # if valid_freq and numpy.mod(eidx, valid_freq) == 0:
+        # TODO: for not, validating every epoch... 
+        for _valid, _model_options, _remote_mt, _name in zip([valid_a_b,         valid_b_a        ],
+                                                             [model_options_a_b, model_options_b_a],
+                                                             [remote_mt_a_b,     remote_mt_b_a    ],
+                                                             ['a->b',            'b->a'           ], ):
+                _remote_mt.set_noise_val(0.)
+                valid_errs, _ = pred_probs(_remote_mt.x_f_log_probs, prepare_data, _model_options, _valid, verbose=False)
+                valid_err = valid_errs.mean()
+                logging.info('epoch=%d, MT %s valid_err=%.1f', eidx, _name, valid_err)
+
         for data_type, data in training:
 
             if data_type == 'mt':
                 logging.debug('training on bitext')
 
-                for (x, y), model_options, _remote_mt in zip(data, 
+                for (x, y), model_options, _remote_mt in zip(data,
                                                              [model_options_a_b, model_options_b_a],
                                                              [remote_mt_a_b,     remote_mt_b_a    ]):
 
