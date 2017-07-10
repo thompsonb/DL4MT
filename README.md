@@ -1,7 +1,9 @@
-
-This code is based on Nematus (https://github.com/rsennrich/nematus) - please ensure you can run Nematus before proceeding.
+This is a work-in-progress implementation of Dual Learning for Machine Translation by He et al. published in NIPS 2016 (https://papers.nips.cc/paper/6469-dual-learning-for-machine-translation.pdf, https://arxiv.org/abs/1611.00179). It was developed in part by participants at the 3rd Machine Translation Marathon in the Americas (http://www.statmt.org/mtma17/).
 
 # Requirements: #
+
+This code is based on Nematus (https://github.com/rsennrich/nematus) - please ensure you can run Nematus before proceeding. 
+
 
 The default language model is KenLM. You need both kenlm and the python wrapper
 (pip install https://github.com/kpu/kenlm/archive/master.zip)
@@ -53,4 +55,23 @@ The language model required here is a kenlm model with a small wrapper around it
 # Running the code: #
 ./run_train_dual.py sample_config.py
 
+***
+
+Originator Reference Number: RH-17-117200 Case Reviewer: Brian Brackens Case
+Number: 88ABW-2017-3032 The material was assigned a clearance of CLEARED on 20
+Jun 2017.
+
+***
+
+This software and any accompanying documentation is released "as is."  
+The U.S. government makes no warranty of any kind, express or implied,
+concerning this software and any accompanying documentation, including,
+without limitation, any warranties of merchantability or fitness for a
+particular purpose.  In no event will the U.S. government be liable for any
+damages, including any lost profits, lost savings or other incidental or
+consequential damages arising out of the use, or inability to use, this
+software or any accompanying documentation, even if informed in advance of
+the possibility of such damages.
+
+***
 
